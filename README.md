@@ -47,11 +47,11 @@ Here is an example of what the application window looks like:
 ![image](https://github.com/Index154/slideshow-gallery/assets/105119758/69fc3a6f-2fa9-4fe9-b2fb-3a0b403e9e20)
 There is a small bar at the top with several buttons and settings. I will now explain them in order.
 ### Image count
-Allows you to select the amount of images to display. Currently you can only choose between 8 and 1. This setting only goes into effect after reloading the page (restarting the app or pressing R).
+Allows you to select the amount of images to display. Currently you can only choose between 8 and 1. This setting only goes into effect after reloading the app (restarting it or pressing R).
 ### Delay
 Controls how many seconds have to pass before an image will be replaced with a new image.
 ### Offset
-Controls how many seconds are between the individual images changing. If set to 0, all images change at the same time.
+Controls how many seconds are between the individual images changing. If set to 0, all images change at the same time. Changing this value will only have an effect after reloading the app (restarting it or pressing R).
 ### Pause all
 This button "pauses" all images, meaning that they will no longer be changed every X seconds. Paused images have red borders.
 While an image is "paused", its timer keeps running in the background. It simply doesn't affect the image while in this state. This has the effect of keeping images in sync even if you pause and unpause them independently of one another.
