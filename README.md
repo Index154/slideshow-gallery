@@ -18,7 +18,7 @@ Since I made this app mostly for my own use it currently isn't as flexible or se
 # Detailed functionality
 ## Files
 The app's files are stored in your appdata directory, within the subfolder slideshow-gallery (for example `C:\users\%username%\appdata\roaming\slideshow-gallery` in Windows).
-# config.json
+### config.json
 This file contains the app's configs. Whenever you change a setting in the GUI it will be saved to this file. When the app starts it will look for the file and load the saved configurations.
 Here is an example config:
 ```json
@@ -38,7 +38,7 @@ Here is an example config:
 There are two settings here which are currently not available in the GUI:
 - sourcePaths: An array of strings representing folder paths where the app will recursively look for image files to use
 - movePath: A single string representing a folder path where the app will move files when you press the "Move all low rated" button or when you right click an image and select "Move file"
-# ratings.json
+### ratings.json
 An image can be rated using the right click context menu or by pressing the corresponding number key (1, 2, 3, 4 or 5) while hovering the cursor over it. Your image ratings are stored in this file. Currently one limitation of this application is that image ratings are saved with their folder path to avoid duplicate naming issues. However this means that if you move an image it will go back to being unrated. The rating will still be in the list but the file will no longer be associated with it. I plan on changing this behavior if possible.
 
 ## GUI
