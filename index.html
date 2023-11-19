@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<link rel="stylesheet" href="./style.css">
+		<title>E-Gallery</title>
+	</head>
+	<body>
+		
+		<!-- Flex box for inputs and buttons -->
+		<div class="flex-container">
+			<label>Image count: </label> <select name="imageCount" id="imageCountSelector">
+				<option value="eight">8</option>
+				<option value="one">1</option>
+			</select>
+			<label>Delay: </label> <input type="text" id="delayInput" name="delay" style="width: 30px" value="6">
+			<label>Offset: </label> <input type="text" id="offsetInput" name="offset" style="width: 30px" value="0">
+			<button type="button" id="pauseButton">Pause all</button>
+			<button type="button" id="continueButton">Resume all</button>
+			<label>Image pool: </label> <select name="imagePool" id="imagePoolSelector">
+				<option value="random">Random</option>
+				<option value="unrated">Unrated</option>
+				<option value="highRating">High rating</option>
+				<option value="highestRating">Highest rating</option>
+				<option value="lowRating">Low rating</option>
+				<option value="savedGrids">Saved grids</option>
+			</select>
+			<label>On left click: </label> <select name="clickAction" id="clickActionSelector">
+				<option value="pauseResume">Pause/resume</option>
+				<option value="change">Change image</option>
+				<option value="zoom">Zoom</option>
+				<option value="none">No effect</option>
+			</select>
+			<button type="button" id="saveGridButton">Save grid</button>
+			<label>Change after rating?</label><input type="checkbox" id="changeWhenRatedCheckbox" name="changeWhenRated" value="changeWhenRated">
+			<label>Unrated count = </label><label id="unratedCounter"></label>
+			<button type="button" id="moveButton">Move all low rated</button>
+		</div>
+		
+		<!-- This will be filled with image elements automatically -->
+		<div id="imgDisplay"></div>
+		
+		<!-- Renderer script -->
+		<script src="./renderer.js"></script>
+		
+	</body>
+</html>

@@ -1,0 +1,17 @@
+{
+  "name": "e-gallery",
+  "version": "1.0.0",
+  "description": "",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "author": "ArtificialIndex",
+  "license": "ISC",
+  "devDependencies": {
+    "electron": "^27.0.4"
+  },
+  "dependencies": {
+    "html-entities": "^2.4.0"
+  }
+}
