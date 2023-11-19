@@ -16,7 +16,7 @@ Since I made this app mostly for my own use it currently isn't as flexible or se
 
 # Detailed functionality
 ## Files
-The app's files are stored in your appdata directory, within the subfolder slideshow-gallery (for example C:\users\%username%\appdata\roaming\slideshow-gallery in Windows).
+The app's files are stored in your appdata directory, within the subfolder slideshow-gallery (for example `C:\users\%username%\appdata\roaming\slideshow-gallery` in Windows).
 # Config.json
 This file contains the app's configs. Whenever you change a setting in the GUI it will be saved to this file. When the app starts it will look for the file and load the saved configurations.
 Here is an example config:
