@@ -5,7 +5,7 @@ const fs = require('fs')
 
 // Get paths
 // TODO: Create a config file with default values if it does not exist yet
-let appdataPath = path.join(app.getPath('appData'), 'e-gallery')
+let appdataPath = path.join(app.getPath('appData'), 'slideshow-gallery')
 let configPath = path.join(appdataPath, 'config.json')
 let config = JSON.parse(fs.readFileSync(configPath, 'utf8'))
 let movePath = config.movePath
