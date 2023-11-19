@@ -51,6 +51,7 @@ const createWindow = () => {
 	})
 	
 	// Maximize window and load HTML
+	win.removeMenu()
 	win.maximize()
 	win.loadFile('index.html')
 
@@ -65,6 +66,7 @@ const createWindow = () => {
 			}
 		}
 	})
+	console.log(win)
 }
 
 // Create the main window when ready
@@ -85,6 +87,7 @@ app.on('window-all-closed', () => {
 })
 
 // ipcMain event handlers
+// --------------------------------------------------------------------------------------------------------------
 	// Create context / right click menu
 	ipcMain.on('show-context-menu', (e, rightClickPosition, imgRating, elementClass) => {
 		
@@ -155,3 +158,11 @@ app.on('window-all-closed', () => {
 	})
 	// Return appdataPath to the renderer when requested
 	ipcMain.on('get-appdataPath', (e) => { e.returnValue = appdataPath })
+	// Reload window
+	ipcMain.on('reload', (e) => {
+		BrowserWindow.fromWebContents(e.sender).reload()
+	})
+	// Open dev tools
+	ipcMain.on('dev-tools', (e) => {
+		BrowserWindow.fromWebContents(e.sender).webContents.openDevTools()
+	})

@@ -284,6 +284,10 @@ let imgCount = imgSettings[config.imageCount].count
 		if(e.key == '5' || e.key == '4' || e.key == '3' || e.key == '2' || e.key == '1'){
 			let element = document.elementFromPoint(mousePosition.x, mousePosition.y)
 			if(element !== undefined && element.src !== undefined) rateImg(element, e.key)
+		}else if(e.key == 'r'){
+			ipcRenderer.send('reload')
+		}else if(e.key == 'Control'){
+			ipcRenderer.send('dev-tools')
 		}
 	}, true)
 
