@@ -74,10 +74,11 @@ When pressed, this button saves all currently active / visible images. As long a
 If checked, images will change after you rate them. Even if an image is "paused" it will still work. This is useful for iterating through all your unrated images until you're done with them.
 For the sake of knowing how much progress you've made there is also the item "Unrated count" which shows you how many images you have yet to rate
 ### Move all low rated
-Moves all images rated 1 or 2 to the configured target folder
+Moves all images rated 1 or 2 to the configured target folder. See **Config.json**
 
 ## Context menu (right click)
 ![image](https://github.com/Index154/slideshow-gallery/assets/105119758/283f41cb-0e53-46fd-8d79-ad0210c40c4e)
+
 You can right click an image and select an action to perform on it:
 - Paused: Can be used to pause or unpause an image
 - Zoom: Can be used to open an image in a new window at a larger size. Clicking anywhere in this window will close it again
@@ -85,3 +86,8 @@ You can right click an image and select an action to perform on it:
 - Open: Opens the image with your OS' default application
 - Rate 5 to 1: Can be used to rate the image. See **Ratings.json**
 - Move file: Moves the file to the configured target folder. See **Config.json**
+
+## Keyboard shortcuts
+- R: Reloads the window
+- Ctrl: Opens the devtools (inspect element and such)
+- Number keys 1 to 5: Apply the corresponding rating to the image your mouse cursor is currently on
