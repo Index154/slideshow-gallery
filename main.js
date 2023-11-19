@@ -4,11 +4,35 @@ const path = require('node:path')
 const fs = require('fs')
 
 // Get paths
-// TODO: Create a config file with default values if it does not exist yet
 let appdataPath = path.join(app.getPath('appData'), 'slideshow-gallery')
+// If the appdata folder doesn't exist, create it
+if(!fs.existsSync(appdataPath)) fs.mkdirSync(appdataPath)
 let configPath = path.join(appdataPath, 'config.json')
-let config = JSON.parse(fs.readFileSync(configPath, 'utf8'))
+// Create a config file with default values if it does not exist yet
+let config = {}
+if(!fs.existsSync(configPath)){
+	config = {
+		imagePool: 'random',
+		delay: '15',
+		offset: '5',
+		changeWhenRated: true,
+		clickAction: 'pauseResume',
+		imageCount: 'eight',
+		sourcePaths: [''],
+		movePath: ''
+	}
+	fs.writeFileSync(configPath, JSON.stringify(config, null, 4))
+}else{
+	config = JSON.parse(fs.readFileSync(configPath, 'utf8'))
+}
 let movePath = config.movePath
+
+// Create a ratings file if it does not exist yet
+let ratingsPath = path.join(appdataPath, 'ratings.json')
+if(!fs.existsSync(ratingsPath)){
+	let ratings = {}
+	fs.writeFileSync(ratingsPath, JSON.stringify(ratings, null, 4))
+}
 
 // Function for creating the main window
 const createWindow = () => {
