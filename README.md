@@ -56,7 +56,7 @@ Controls how many seconds are between the individual images changing. If set to 
 This button "pauses" all images, meaning that they will no longer be changed every X seconds. Paused images have red borders.
 While an image is "paused", its timer keeps running in the background. It simply doesn't affect the image while in this state. This has the effect of keeping images in sync even if you pause and unpause them independently of one another.
 ### Resume all
-Unpauses all images that are paused
+Unpauses all images that are paused.
 ### Image pool
 Controls which images from the configured source folder(s) (see **Config.json**) can be selected when existing images are replaced. There are a few options here:
 - Random: All images
