@@ -12,6 +12,8 @@ let configPath = path.join(appdataPath, 'config.json')
 let latestGrid = []
 let mousePosition = {x: 0, y: 0}
 
+// TODO: Reformat ratings.json like { folderPath: {fileName: {rating: X}}}
+
 // Get config file
 let config = JSON.parse(fs.readFileSync(configPath, 'utf8'))
 
@@ -290,7 +292,6 @@ let imgCount = imgSettings[config.imageCount].count
 			let image = decodeImg(element.src)
 			// Remove from low rated images list
 			// TODO: Also account for other image arrays here
-			// TODO: Update ratings entry for the image with the new path
 			lowRatedImages.splice(lowRatedImages.indexOf(image), 1)
 			// Change image
 			let id = parseInt(element.id.substring(element.id.length - 1, element.id.length))
