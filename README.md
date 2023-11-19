@@ -1,3 +1,5 @@
+![image](https://github.com/Index154/slideshow-gallery/assets/105119758/6151281c-0270-4387-b355-f8cd36e2ae71)
+
 # Introduction
 An image slideshow gallery with the ability to rate images for sorting purposes
 
