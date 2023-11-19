@@ -46,15 +46,14 @@ let imgCount = imgSettings[config.imageCount].count
 
 // Prepare image lists
 // --------------------------------------------------------------------------------------------------------------
-	// Create array of image paths by looping through all file names in all configured folders
+	// Create array of image paths by looping through all file names in all configured folders and their subfolders
 	let images = []
+	let foldersToScan = [];
 	for(x = 0; x < config.sourcePaths.length; x++){
-		if(fs.existsSync(config.sourcePaths[x])){
-			let tempImages = fs.readdirSync(config.sourcePaths[x])
-			for(i = 0; i < tempImages.length; i++){
-				tempImages[i] = path.join(config.sourcePaths[x], tempImages[i])
-			}
-			images = images.concat(tempImages)
+		if(fs.existsSync(config.sourcePaths[x])) scanFolder(config.sourcePaths[x])
+		while(foldersToScan.length > 0){
+			scanFolder(foldersToScan[0])
+			foldersToScan.splice(0, 1)
 		}
 	}
 	if(images.length < 1) images.push(fallbackImage)
@@ -208,6 +207,35 @@ let imgCount = imgSettings[config.imageCount].count
 		// Change image if the relevant setting is enabled
 		let id = parseInt(element.id.substring(element.id.length - 1, element.id.length))
 		if(changeWhenRated) changeImg(element, id, 'click')
+	}
+
+	// Scan folder recursively for images function
+	function scanFolder(folderPath){
+		// If it's a directory
+		if(fs.lstatSync(folderPath).isDirectory() && !folderPath.includes('.driveupload')){
+			// Get all file and folder names within
+			let tempImages = fs.readdirSync(folderPath)
+			for(i = 0; i < tempImages.length; i++){
+				let newPath = path.join(folderPath, tempImages[i])
+				if(fs.lstatSync(newPath).isDirectory()) {
+					// Add detected folders to the list of folders to scan
+					foldersToScan.push(newPath)
+					tempImages.splice(i, 1)
+					i--
+				}else{
+					// Only keep files with specific file extensions in the temporary array
+					let fileEnding = tempImages[i].substring(tempImages[i].length - 5, tempImages[i].length)
+					if(fileEnding.includes('.png') || fileEnding.includes('.jpg') || fileEnding.includes('.jpeg') || fileEnding.includes('.gif') || fileEnding.includes('.webp')){
+						tempImages[i] = newPath
+					}else{
+						tempImages.splice(i, 1)
+						i--
+					}
+				}
+			}
+			// Add found images to the main array
+			images = images.concat(tempImages)
+		}
 	}
 
 // Misc event listeners

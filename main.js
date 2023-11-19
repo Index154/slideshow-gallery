@@ -66,7 +66,6 @@ const createWindow = () => {
 			}
 		}
 	})
-	console.log(win)
 }
 
 // Create the main window when ready
