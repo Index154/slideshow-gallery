@@ -7,7 +7,6 @@
     "start": "electron ."
   },
   "author": "ArtificialIndex",
-  "license": "ISC",
   "devDependencies": {
     "electron": "^27.0.4"
   },
