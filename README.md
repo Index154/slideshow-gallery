@@ -44,7 +44,7 @@ An image can be rated using the right click context menu or by pressing the corr
 
 ## GUI
 Here is an example of what the application window looks like:
-![image](https://github.com/Index154/slideshow-gallery/assets/105119758/6151281c-0270-4387-b355-f8cd36e2ae71)
+![image](https://github.com/Index154/slideshow-gallery/assets/105119758/69fc3a6f-2fa9-4fe9-b2fb-3a0b403e9e20)
 There is a small bar at the top with several buttons and settings. I will now explain them in order.
 ### Image count
 Allows you to select the amount of images to display. Currently you can only choose between 8 and 1. This setting only goes into effect after reloading the page (restarting the app or pressing R).
