@@ -84,7 +84,6 @@ if(!fs.existsSync(configPath)){
 		clickAction: 'pauseResume',
 		imageCount: 'eight',
 		sourcePaths: [],
-		pathStates: [],
 		movePath: ''
 	}
 	fs.writeFileSync(configPath, JSON.stringify(config, null, 4))
@@ -92,7 +91,6 @@ if(!fs.existsSync(configPath)){
 	config = JSON.parse(fs.readFileSync(configPath, 'utf8'))
 }
 let movePath = config.movePath
-let fallbackImage = path.join(__dirname, 'images', 'no-images.png')
 
 // Create a ratings file if it does not exist yet
 let ratingsPath = path.join(appdataPath, 'ratings.json')
@@ -101,7 +99,7 @@ if(!fs.existsSync(ratingsPath)){
 	fs.writeFileSync(ratingsPath, JSON.stringify(ratings, null, 4))
 }
 
-// Function for creating the main window
+// Window creation function
 const createWindow = (width, height, htmlFile, maximize, alwaysOnTop) => {
 	
 	// Window object
@@ -129,7 +127,7 @@ const createWindow = (width, height, htmlFile, maximize, alwaysOnTop) => {
         win.focus();
     });
 
-	// Define settings for other windows opened through the renderer (see zoom function)
+	// Define settings for other windows opened through the renderer
 	/*win.webContents.setWindowOpenHandler(() => {
 		return {
 			action: 'allow',
@@ -247,28 +245,6 @@ app.on('window-all-closed', () => {
 	// Open dev tools
 	ipcMain.on('dev-tools', (e) => {
 		BrowserWindow.fromWebContents(e.sender).webContents.openDevTools()
-	})
-	// Write to file
-	ipcMain.on('write-file', (e, path, contents) => {
-		// broken
-		fs.writeFile(path, contents, (err) => {if(err) console.err(err)})
-		return ''
-	})
-	// Read from file
-	ipcMain.on('read-file', (e, path) => {
-		e.returnValue = fs.readFileSync(path, 'utf8')
-	})
-	// Read from directory
-	ipcMain.on('read-dir', (e, path) => {
-		e.returnValue = fs.readdirSync(path)
-	})
-	// Check path existence
-	ipcMain.on('exists', (e, path) => {
-		e.returnValue = fs.existsSync(path)
-	})
-	// Check if path is a dir
-	ipcMain.on('lstat', (e, path) => {
-		e.returnValue = fs.lstatSync(path).isDirectory()
 	})
 	// Decode image
 	ipcMain.on('decode', (e, path) => {

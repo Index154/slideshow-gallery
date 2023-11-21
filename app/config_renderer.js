@@ -10,15 +10,17 @@ let config = JSON.parse(fs.readFileSync(configPath, 'utf8'))
 // Automatically insert folder paths into the HTML
 let flexDiv = document.querySelector('#flexdiv')
 let folderLevel = 0
+let folderId = 0
 function loadFolders(array) {
-    array.forEach(function(part, index){
-        insertPath(this[index], this)
+    array.forEach(function(folder, index){
+        insertPath(folder, array)
+        folderId++
         folderLevel++
-        loadFolders(this[index].folders)
+        loadFolders(folder.folders)
         folderLevel--
     }, array)
 }
-loadFolders(config.newPaths)
+loadFolders(config.sourcePaths)
 
 // Keyboard shortcut listener
 window.addEventListener('keyup', (e) => {
@@ -32,35 +34,73 @@ window.addEventListener('keyup', (e) => {
     }
 }, true)
 
-// Add folder button listener
-document.querySelector('#addFolderButton').addEventListener('click', () => {
+// Add folder(s) button listeners
+document.querySelector('#addFolderButton').addEventListener('click', (e) => {
+    folderDialog(false)
+})
+document.querySelector('#addFoldersButton').addEventListener('click', (e) => {
+    folderDialog(true)
+})
+
+// Enable all button listener
+document.querySelector('#enableAllButton').addEventListener('click', (e) => {
+    let checkBoxes = document.querySelectorAll('input[type=checkbox]')
+    checkBoxes.forEach(element => {
+        element.checked = true
+    });
+    changeAllStates(config.sourcePaths, true)
+    fs.writeFileSync(configPath, JSON.stringify(config, null, 4))
+})
+// Disable all button listener
+document.querySelector('#disableAllButton').addEventListener('click', (e) => {
+    let checkBoxes = document.querySelectorAll('input[type=checkbox]')
+    checkBoxes.forEach(element => {
+        element.checked = false
+    });
+    changeAllStates(config.sourcePaths, false)
+    fs.writeFileSync(configPath, JSON.stringify(config, null, 4))
+})
+
+// Change all folder states function
+function changeAllStates(array, newState) {
+    array.forEach(function(folder){
+        folder.state = newState
+        changeAllStates(folder.folders, newState)
+    }, array, newState)
+}
+
+// Add folder dialog function
+function folderDialog(includeSubfolders){
     let pickedPath = ipcRenderer.sendSync('open-dialog')
     // If the user cancels the action then it will be undefined
     if(pickedPath !== undefined) {
-        pickedPath = pickedPath[0].replace(/\\\\/g, "/")
-        // TODO: Check if the path is already in the list (maybe as a subfolder)
-        // Save the path
-        config.sourcePaths.push(pickedPath)
-        config.pathStates.push(true)
-        insertPath(pickedPath, config.sourcePaths.length - 1)
+        // Try adding the path(s) to the config
+        addFolder(pickedPath[0].split('\\'), config.sourcePaths)
+        if(includeSubfolders){
+            // Get all subfolders
+            let foundFolders = scanFolder(pickedPath[0])
+            for(i = 0; i < foundFolders.length; i++){
+                // Add all subfolders to the config as well
+                addFolder(foundFolders[i].split('\\'), config.sourcePaths)
+            }
+        }
         fs.writeFileSync(configPath, JSON.stringify(config, null, 4))
-
-        // TODO: Check for subfolders to add as well
-        //scanFolder(pickedPath)
+        ipcRenderer.send('reload')
     }
-})
+}
 
 // Paths into HTML insertion function
 function insertPath(folder, array){
     // Insert
     let path = folder.path.replace(/[:/\\\/ ]/g, "")
     let margin = (folderLevel * 25) + 10
-    flexDiv.insertAdjacentHTML('beforeend', '<div id="div-' + path + '"><input type="checkbox" id="checkbox-' + path + '" value="' + path + '" style="margin-left:' + margin + 'px;"><label>' + folder.path + '</label><button type="button" id="deletePath-' + path + '" class="deleteButton">Delete</button></div>')
+    flexDiv.insertAdjacentHTML('beforeend', '<div id="div-' + path + '"><label><input type="checkbox" id="checkbox-' + folderId + '" value="' + path + '" style="margin-left:' + margin + 'px;">' + folder.path + '</label><button type="button" id="deletePath-' + folderId + '" class="deleteButton">Delete</button></div>')
 
     // Set checkbox state
-    let checkbox = document.querySelector('#checkbox-' + path)
+    let checkbox = document.querySelector('#checkbox-' + folderId)
     if(folder.state) checkbox.checked = true
-    // Event listener for the checkbox
+
+    // Left click event listener for the checkbox
     checkbox.addEventListener('change', (e) => {
         if(e.target.checked) array[array.indexOf(folder)].state = true
         else{array[array.indexOf(folder)].state = false}
@@ -68,7 +108,7 @@ function insertPath(folder, array){
     })
 
     // Event listener for the delete button
-    let deleteButton = document.querySelector('#deletePath-' + path)
+    let deleteButton = document.querySelector('#deletePath-' + folderId)
     deleteButton.addEventListener('click', (e) => {
         let div = document.querySelector('#div-' + path)
         div.remove()
@@ -77,19 +117,54 @@ function insertPath(folder, array){
     })
 }
 
-// Scan folder structure function
-let foundSubfolders = []
-function scanFolder(folderPath){
-    // If it's a directory
-    if(fs.lstatSync(folderPath).isDirectory() && !folderPath.includes('.driveupload')){
-        // Get all file and folder names within
-        let tempFiles = fs.readdirSync(folderPath)
-        for(i = 0; i < tempFiles.length; i++){
-            let newPath = folderPath + '/' + tempFiles[i]
-            if(fs.lstatSync(newPath).isDirectory()) {
-                // Add detected folders to the list of folders to scan
-                foundSubfolders.push(newPath)
+// Add new folder to config function
+function addFolder(pathParts, array) {
+    // Go through the folders in the config, checking if the folder or its parent folders are already known
+    let foundAt
+    array.forEach(function(folder, index){
+        if(folder.path == pathParts[0]) foundAt = index
+    }, pathParts)
+    if(foundAt === undefined) {
+        // If no matching folder was found, the remaining path array elements have to be added as new nested objects
+        let object = { "path": pathParts[0], "state": true, "folders": [] }
+        buildFolderObject(pathParts, object)
+        array.push(object)
+    }else{
+        // Found the folder => Continue checking the remaining subfolders
+        pathParts.splice(0, 1)
+        if(pathParts.length > 0) addFolder(pathParts, array[foundAt].folders)
+    }
+}
+
+// Build nested folder object function
+function buildFolderObject(pathParts, object){
+    pathParts.splice(0, 1)
+    if(pathParts.length > 0){
+        let subObject = { "path": pathParts[0], "state": true, "folders": [] }
+        object.folders.push(subObject)
+        buildFolderObject(pathParts, object)
+    }
+}
+
+// Scan folder for subfolders function
+function scanFolder(foldersToScan){
+    foldersToScan = [foldersToScan]
+    let foundFolders = []
+    while(foldersToScan.length > 0){
+        // If it's a directory
+        if(fs.lstatSync(foldersToScan[0]).isDirectory() && !foldersToScan[0].includes('.driveupload')){
+            // Get all file and folder names within
+            let tempFiles = fs.readdirSync(foldersToScan[0])
+            for(i = 0; i < tempFiles.length; i++){
+                let newPath = foldersToScan[0] + '\\' + tempFiles[i]
+                if(fs.lstatSync(newPath).isDirectory()) {
+                    // Add detected folders to the list of folders to scan
+                    foldersToScan.push(newPath)
+                    foundFolders.push(newPath)
+                }
             }
         }
+        foldersToScan.splice(0, 1)
     }
+    return foundFolders
 }

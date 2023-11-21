@@ -14,3 +14,7 @@ input[type=button] {
 .deleteButton {
     margin-left: 20px;
 }
+
+#addFoldersButton {
+    margin-right: 20px;
+}

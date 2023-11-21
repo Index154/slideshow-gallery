@@ -53,18 +53,11 @@ let imgCount = imgSettings[config.imageCount].count
 // --------------------------------------------------------------------------------------------------------------
 	// Create array of image paths by looping through all file names in all configured folders and their subfolders
 	let images = []
-	let foldersToScan = [];
-	for(x = 0; x < config.sourcePaths.length; x++){
-		if(config.pathStates[x] && existsSync(config.sourcePaths[x])) scanFolder(config.sourcePaths[x])
-	}
-	while(foldersToScan.length > 0){
-		scanFolder(foldersToScan[0])
-		foldersToScan.splice(0, 1)
-	}
+	scanFolders(config.sourcePaths, '')
 	if(images.length < 1) images.push(fallbackImage)
 
 	// Get image ratings
-	let ratings = JSON.parse(readFileSync(ratingsPath))
+	let ratings = JSON.parse(fs.readFileSync(ratingsPath, 'utf8'))
 
 	// Prepare different image arrays for the various pool settings
 	let unratedImages = []
@@ -206,7 +199,7 @@ let imgCount = imgSettings[config.imageCount].count
 			rating: rating
 		}
 		// Save ratings to user appdata
-		writeFileSync(ratingsPath, JSON.stringify(ratings, null, 4))
+		fs.writeFileSync(ratingsPath, JSON.stringify(ratings, null, 4))
 		// Update unrated images
 		unratedImages.splice(unratedImages.indexOf(image), 1)
 		document.querySelector('#unratedCounter').innerHTML = unratedImages.length
@@ -215,55 +208,34 @@ let imgCount = imgSettings[config.imageCount].count
 		if(changeWhenRated) changeImg(element, id, 'click')
 	}
 
-	// Scan folder recursively for images function
-	function scanFolder(folderPath){
-		// If it's a directory
-		if(lstatSync(folderPath) && !folderPath.includes('.driveupload')){
-			// Get all file and folder names within
-			let tempImages = readdirSync(folderPath)
-			for(i = 0; i < tempImages.length; i++){
-				let newPath = folderPath + '/' + tempImages[i]
-				if(lstatSync(newPath)) {
-					// Add detected folders to the list of folders to scan
-					foldersToScan.push(newPath)
-					tempImages.splice(i, 1)
-					i--
-				}else{
-					// Only keep files with specific file extensions in the temporary array
-					let fileEnding = tempImages[i].substring(tempImages[i].length - 5, tempImages[i].length)
-					if(fileEnding.includes('.png') || fileEnding.includes('.jpg') || fileEnding.includes('.jpeg') || fileEnding.includes('.gif') || fileEnding.includes('.webp')){
-						tempImages[i] = newPath
-					}else{
-						tempImages.splice(i, 1)
-						i--
-					}
-				}
-			}
-			// Add found images to the main array
-			images = images.concat(tempImages)
-		}
+	// Scan all configured paths function
+	function scanFolders(array, parentPath, images) {
+		array.forEach(function(folder){
+			let fullPath = folder.path
+			if(parentPath != '') fullPath = path.join(parentPath, folder.path)
+			if(folder.state) scanFolder(fullPath)
+			scanFolders(folder.folders, fullPath, images)
+		}, array, parentPath, images)
 	}
 
-	// File operation functions
-	function readdirSync(path){
-		return fs.readdirSync(path)
-		//return ipcRenderer.sendSync('read-dir', path)
-	}
-	function readFileSync(path){
-		return fs.readFileSync(path, 'utf8')
-		//return ipcRenderer.sendSync('read-file', path)
-	}
-	function writeFileSync(path, contents){
-		fs.writeFileSync(path, contents)
-		//return ipcRenderer.sendSync('write-file', path, contents)
-	}
-	function existsSync(path){
-		return fs.existsSync(path)
-		//return ipcRenderer.sendSync('exists', path)
-	}
-	function lstatSync(path){
-		return fs.lstatSync(path).isDirectory()
-		//return ipcRenderer.sendSync('lstat', path)
+	// Scan folder for images function
+	function scanFolder(folderPath){
+		// Get all file and folder names within
+		let tempImages = fs.readdirSync(folderPath)
+		for(i = 0; i < tempImages.length; i++){
+			
+			// Only keep files with specific file extensions
+			let fileEnding = tempImages[i].substring(tempImages[i].length - 5, tempImages[i].length)
+			if(fileEnding.includes('.png') || fileEnding.includes('.jpg') || fileEnding.includes('.jpeg') || fileEnding.includes('.gif') || fileEnding.includes('.webp')){
+				tempImages[i] = path.join(folderPath, tempImages[i])
+			}else{
+				tempImages.splice(i, 1)
+				i--
+			}
+			
+		}
+		// Add found images to the main array
+		images = images.concat(tempImages)
 	}
 
 // Misc event listeners
@@ -389,7 +361,7 @@ let imgCount = imgSettings[config.imageCount].count
 	// Settings button - Opens config window
 	document.querySelector('#configButton').addEventListener('click', () => {
 		// Open new window
-		ipcRenderer.send('open-window', 600, 600, 'config.html', false, false)
+		ipcRenderer.send('open-window', 600, 850, 'config.html', false, false)
 	})
 	// Save grid button - Saves all current images to an array (for the current session only)
 	// Grids can be cycled through with the corresponding image pool setting
@@ -414,40 +386,40 @@ let imgCount = imgSettings[config.imageCount].count
 		// Update variable and save to config file
 		imagePool = e.target.value
 		config.imagePool = e.target.value
-		writeFileSync(configPath, JSON.stringify(config, null, 4))
+		fs.writeFileSync(configPath, JSON.stringify(config, null, 4))
 	})
 	// Image count selector - Controls the number of images in the window (only applied on reload)
 	document.querySelector('#imageCountSelector').addEventListener('change', (e) => {
 		// Update variable and save to config file
 		imageCount = e.target.value
 		config.imageCount = e.target.value
-		writeFileSync(configPath, JSON.stringify(config, null, 4))
+		fs.writeFileSync(configPath, JSON.stringify(config, null, 4))
 	})
 	// Left click action selector - Controls what action is performed when an image is clicked on
 	document.querySelector('#clickActionSelector').addEventListener('change', (e) => {
 		// Update variable and save to config file
 		clickAction = e.target.value
 		config.clickAction = e.target.value
-		writeFileSync(configPath, JSON.stringify(config, null, 4))
+		fs.writeFileSync(configPath, JSON.stringify(config, null, 4))
 	})
 	// Delay input field - Sets the interval for images being cycled in seconds
 	document.querySelector('#delayInput').addEventListener('change', (e) => {
 		// Update variable and save to config file
 		delay = e.target.value
 		config.delay = e.target.value
-		writeFileSync(configPath, JSON.stringify(config, null, 4))
+		fs.writeFileSync(configPath, JSON.stringify(config, null, 4))
 	})
 	// Offset input field - Sets the difference in seconds between the individual images in the grid cycling
 	document.querySelector('#offsetInput').addEventListener('change', (e) => {
 		// Update variable and save to config file
 		offset = e.target.value
 		config.offset = e.target.value
-		writeFileSync(configPath, JSON.stringify(config, null, 4))
+		fs.writeFileSync(configPath, JSON.stringify(config, null, 4))
 	})
 	// Change when rated checkbox - If enabled, 
 	document.querySelector('#changeWhenRatedCheckbox').addEventListener('change', (e) => {
 		// Update variable and save to config file
 		changeWhenRated = e.target.checked
 		config.changeWhenRated = e.target.checked
-		writeFileSync(configPath, JSON.stringify(config, null, 4))
+		fs.writeFileSync(configPath, JSON.stringify(config, null, 4))
 	})
