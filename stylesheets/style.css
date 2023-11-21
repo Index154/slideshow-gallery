@@ -13,9 +13,17 @@ body {
 	color: white;
 }
 
+img {
+	object-fit: contain;
+}
+
 .container {
 	display: inline-block;
 	position: relative;
+}
+
+.flex-container {
+	flex-wrap: wrap;
 }
 
 .overlay {
@@ -32,4 +40,9 @@ body {
 
 .container:hover .overlay {
   opacity: 1;
+}
+
+input[type=checkbox] {
+    -webkit-transform: scale(1.3); /* Safari and Chrome */
+    transform: scale(1.3);
 }

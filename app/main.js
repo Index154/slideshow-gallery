@@ -1,7 +1,72 @@
 // Modules
-const { app, BrowserWindow, ipcMain, Menu, shell } = require('electron')
+const { app, BrowserWindow, ipcMain, Menu, shell, dialog } = require('electron')
 const path = require('node:path')
 const fs = require('fs')
+const { decode } = require('html-entities')
+
+// Prevent the app from launching during a squirrel startup
+if (require('electron-squirrel-startup')) app.quit()
+
+// Handle installation, uninstallation and first run events for the packaged application setup
+if (handleSquirrelEvent()) {
+	// Do not launch the app
+	return;
+}
+// Function for the above
+function handleSquirrelEvent() {
+	if (process.argv.length === 1) {
+	  	return false;
+	}
+	
+	const ChildProcess = require('child_process')
+	// Get default paths
+	const appFolder = path.resolve(process.execPath, '..')
+	const rootAtomFolder = path.resolve(appFolder, '..')
+	const updateDotExe = path.resolve(path.join(rootAtomFolder, 'Update.exe'))
+	const exeName = path.basename(process.execPath)
+	
+	const spawn = function(command, args) {
+	  	let spawnedProcess, error;
+  
+	  	try {
+			spawnedProcess = ChildProcess.spawn(command, args, {detached: true})
+	  	} catch (error) {}
+  
+	  	return spawnedProcess;
+	};
+	
+	const spawnUpdate = function(args) {
+	  	return spawn(updateDotExe, args)
+	};
+  
+	// Handle squirrel events
+	const squirrelEvent = process.argv[1]
+	switch (squirrelEvent) {
+		case '--squirrel-firstrun':
+			// TODO: Open configuration dialog
+			return false
+
+		case '--squirrel-install':
+			// Create desktop and start menu shortcuts on installation
+			spawnUpdate(['--createShortcut', exeName])
+			return false
+
+		case '--squirrel-updated':
+			app.quit()
+			return true
+  
+		case '--squirrel-uninstall':
+			// Remove desktop and start menu shortcuts
+			spawnUpdate(['--removeShortcut', exeName])
+			setTimeout(app.quit, 1000)
+			return true
+  
+		case '--squirrel-obsolete':
+			// Called on the old version of the app before being updated
+			app.quit()
+			return true
+	}
+};
 
 // Get paths
 let appdataPath = path.join(app.getPath('appData'), 'slideshow-gallery')
@@ -18,7 +83,8 @@ if(!fs.existsSync(configPath)){
 		changeWhenRated: true,
 		clickAction: 'pauseResume',
 		imageCount: 'eight',
-		sourcePaths: [''],
+		sourcePaths: [],
+		pathStates: [],
 		movePath: ''
 	}
 	fs.writeFileSync(configPath, JSON.stringify(config, null, 4))
@@ -26,6 +92,7 @@ if(!fs.existsSync(configPath)){
 	config = JSON.parse(fs.readFileSync(configPath, 'utf8'))
 }
 let movePath = config.movePath
+let fallbackImage = path.join(__dirname, 'images', 'no-images.png')
 
 // Create a ratings file if it does not exist yet
 let ratingsPath = path.join(appdataPath, 'ratings.json')
@@ -35,28 +102,35 @@ if(!fs.existsSync(ratingsPath)){
 }
 
 // Function for creating the main window
-const createWindow = () => {
+const createWindow = (width, height, htmlFile, maximize, alwaysOnTop) => {
 	
 	// Window object
 	const win = new BrowserWindow({
-		width: 1800,
-		height: 1000,
-		// TODO: Change these settings back to default and fix the issues it causes (require is unknown)
+		width: width,
+		height: height,
+		show: false,
 		webPreferences: {
-			// DANGEROUS INSECURE SETTINGS
 			contextIsolation: false,
-			nodeIntegration: true,
-			nodeIntegrationInWorker: true
+			nodeIntegration: true
 		}
 	})
 	
 	// Maximize window and load HTML
 	win.removeMenu()
-	win.maximize()
-	win.loadFile('index.html')
+	//win.webContents.openDevTools()
+	if(maximize) win.maximize()
+	if(alwaysOnTop) win.setAlwaysOnTop(true, 'modal-panel')
+	htmlFile = path.join('.', 'html', htmlFile)
+	win.loadFile(htmlFile)
+
+	// Only show the window after it has finished loading
+	win.webContents.on("did-finish-load", () => {
+        win.show();
+        win.focus();
+    });
 
 	// Define settings for other windows opened through the renderer (see zoom function)
-	win.webContents.setWindowOpenHandler(() => {
+	/*win.webContents.setWindowOpenHandler(() => {
 		return {
 			action: 'allow',
 			overrideBrowserWindowOptions: {
@@ -65,12 +139,12 @@ const createWindow = () => {
 				height: 900
 			}
 		}
-	})
+	})*/
 }
 
 // Create the main window when ready
 app.whenReady().then(() => {
-	createWindow()
+	createWindow(1800, 1000, 'index.html', true, false)
   
 	// MacOS listener: Open new window when the app is "started" while already running
 	app.on('activate', () => {
@@ -155,13 +229,58 @@ app.on('window-all-closed', () => {
 		fileName = pathParts[pathParts.length - 1]
 		fs.rename(path, movePath + fileName, (err) => {if(err) throw err})
 	})
-	// Return appdataPath to the renderer when requested
-	ipcMain.on('get-appdataPath', (e) => { e.returnValue = appdataPath })
+	// Return paths and configs to the renderer when requested
+	ipcMain.on('get-config', (e) => { 
+		e.returnValue = appdataPath
+		/*e.returnValue = {
+			'fallbackImage': fallbackImage,
+			'ratingsPath': ratingsPath,
+			'configPath': configPath,
+			'config': config
+		}*/
+	})
 	// Reload window
 	ipcMain.on('reload', (e) => {
+		//config = JSON.parse(fs.readFileSync(configPath, 'utf8'))
 		BrowserWindow.fromWebContents(e.sender).reload()
 	})
 	// Open dev tools
 	ipcMain.on('dev-tools', (e) => {
 		BrowserWindow.fromWebContents(e.sender).webContents.openDevTools()
+	})
+	// Write to file
+	ipcMain.on('write-file', (e, path, contents) => {
+		// broken
+		fs.writeFile(path, contents, (err) => {if(err) console.err(err)})
+		return ''
+	})
+	// Read from file
+	ipcMain.on('read-file', (e, path) => {
+		e.returnValue = fs.readFileSync(path, 'utf8')
+	})
+	// Read from directory
+	ipcMain.on('read-dir', (e, path) => {
+		e.returnValue = fs.readdirSync(path)
+	})
+	// Check path existence
+	ipcMain.on('exists', (e, path) => {
+		e.returnValue = fs.existsSync(path)
+	})
+	// Check if path is a dir
+	ipcMain.on('lstat', (e, path) => {
+		e.returnValue = fs.lstatSync(path).isDirectory()
+	})
+	// Decode image
+	ipcMain.on('decode', (e, path) => {
+		e.returnValue = decode(path)
+	})
+	// Show open dialog
+	ipcMain.on('open-dialog', (e) => {
+		e.returnValue = dialog.showOpenDialogSync({
+			properties: ['openDirectory', 'dontAddToRecent']
+		})
+	})
+	// Open window
+	ipcMain.on('open-window', (e, width, height, html, max, alwaysOnTop) => {
+		createWindow(width, height, html, max, alwaysOnTop)
 	})

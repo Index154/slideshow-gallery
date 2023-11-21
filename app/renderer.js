@@ -1,26 +1,29 @@
-// Modules
+// Unsafe node access module (make it go through the preload script later)
 const { ipcRenderer } = require('electron')
 const fs = require('fs')
-const { decode } = require('html-entities')
 const path = require('node:path')
 
 // Defaults and paths
-let appdataPath = ipcRenderer.sendSync('get-appdataPath')
-let fallbackImage = path.join(__dirname, 'icons', 'no-images.png')
+let appdataPath = ipcRenderer.sendSync('get-config')
+let fallbackImage = path.join('..', 'images', 'no-images.png')
 let ratingsPath = path.join(appdataPath, 'ratings.json')
 let configPath = path.join(appdataPath, 'config.json')
+let config = JSON.parse(fs.readFileSync(configPath, 'utf8'))
+/*let fromMain = ipcRenderer.sendSync('get-config')
+let fallbackImage = fromMain.fallbackImage
+let ratingsPath = fromMain.ratingsPath
+let configPath = fromMain.configPath
+let config = fromMain.config
+*/
 let latestGrid = []
 let mousePosition = {x: 0, y: 0}
 
-// TODO: Reformat ratings.json like { folderPath: {fileName: {rating: X}}}
-
-// Get config file
-let config = JSON.parse(fs.readFileSync(configPath, 'utf8'))
-
 // Image count and size
 let imgSettings = {
-	'eight': {'dim': 375, 'count': 8},
-	'one': {'dim': 700, 'count': 1}
+	eighteen: {dim: 240, count: 18},
+	twelve: {dim: 260, count: 12},
+	eight: {dim: 375, count: 8},
+	one: {dim: 700, count: 1}
 }
 let imgDim = imgSettings[config.imageCount].dim
 let imgCount = imgSettings[config.imageCount].count
@@ -52,16 +55,16 @@ let imgCount = imgSettings[config.imageCount].count
 	let images = []
 	let foldersToScan = [];
 	for(x = 0; x < config.sourcePaths.length; x++){
-		if(fs.existsSync(config.sourcePaths[x])) scanFolder(config.sourcePaths[x])
-		while(foldersToScan.length > 0){
-			scanFolder(foldersToScan[0])
-			foldersToScan.splice(0, 1)
-		}
+		if(config.pathStates[x] && existsSync(config.sourcePaths[x])) scanFolder(config.sourcePaths[x])
+	}
+	while(foldersToScan.length > 0){
+		scanFolder(foldersToScan[0])
+		foldersToScan.splice(0, 1)
 	}
 	if(images.length < 1) images.push(fallbackImage)
 
 	// Get image ratings
-	let ratings = JSON.parse(fs.readFileSync(ratingsPath, 'utf8'))
+	let ratings = JSON.parse(readFileSync(ratingsPath))
 
 	// Prepare different image arrays for the various pool settings
 	let unratedImages = []
@@ -118,7 +121,7 @@ let imgCount = imgSettings[config.imageCount].count
 // --------------------------------------------------------------------------------------------------------------
 	// Image source path decoding function
 	function decodeImg(path){
-		return decode(path.replace(/%20/g, ' ').replace(/file:\/\/\//g, ''))
+		return ipcRenderer.sendSync('decode', path.replace(/%20/g, ' ').replace(/file:\/\/\//g, ''))
 	}
 
 	// Function for getting a random image link based on the selected pool
@@ -128,24 +131,23 @@ let imgCount = imgSettings[config.imageCount].count
 			// No rating
 			case 'unrated':
 				tempImages = unratedImages
-				break;
+				break
 			// Rating > 3
 			case 'highRating':
 				tempImages = highRatedImages
-				break;
+				break
 			// Rating == 5
 			case 'highestRating':
 				tempImages = highestRatedImages
-				break;
+				break
 			// Rating < 3
 			case 'lowRating':
 				tempImages = lowRatedImages
-				break;
+				break
 			// Saved grids of current session (only if there are 2 or more - otherwise jump to default case)
 			case 'savedGrids':
 				if(savedGrids.length > 1){
 					// savedGrids is an array of arrays of image paths (one image for each grid slot)
-					console.log(latestGrid)
 					let newSrc = savedGrids[latestGrid[id]][id]
 					let nextGrid = latestGrid[id] + 1
 					if(nextGrid > savedGrids.length - 1) nextGrid = 0
@@ -187,11 +189,13 @@ let imgCount = imgSettings[config.imageCount].count
 	// Zoom in on image function
 	function zoom(element){
 		// Open new window with only the image in it
-		const imgWindow = window.open(element.src, '_blank')
+		const imgWindow = window.open(element.src, '_blank', 'frame=false,width=900,height=900')
 		// Add left click event listener to new window to make any click close it
 		imgWindow.addEventListener('click', () => {
 			imgWindow.close()
 		})
+		// Close window when it loses focus
+		imgWindow.onblur = function() { this.close(); };
 	}
 
 	// Rate an image 1 to 5 function
@@ -202,7 +206,7 @@ let imgCount = imgSettings[config.imageCount].count
 			rating: rating
 		}
 		// Save ratings to user appdata
-		fs.writeFileSync(ratingsPath, JSON.stringify(ratings, null, 4))
+		writeFileSync(ratingsPath, JSON.stringify(ratings, null, 4))
 		// Update unrated images
 		unratedImages.splice(unratedImages.indexOf(image), 1)
 		document.querySelector('#unratedCounter').innerHTML = unratedImages.length
@@ -214,12 +218,12 @@ let imgCount = imgSettings[config.imageCount].count
 	// Scan folder recursively for images function
 	function scanFolder(folderPath){
 		// If it's a directory
-		if(fs.lstatSync(folderPath).isDirectory() && !folderPath.includes('.driveupload')){
+		if(lstatSync(folderPath) && !folderPath.includes('.driveupload')){
 			// Get all file and folder names within
-			let tempImages = fs.readdirSync(folderPath)
+			let tempImages = readdirSync(folderPath)
 			for(i = 0; i < tempImages.length; i++){
-				let newPath = path.join(folderPath, tempImages[i])
-				if(fs.lstatSync(newPath).isDirectory()) {
+				let newPath = folderPath + '/' + tempImages[i]
+				if(lstatSync(newPath)) {
 					// Add detected folders to the list of folders to scan
 					foldersToScan.push(newPath)
 					tempImages.splice(i, 1)
@@ -238,6 +242,28 @@ let imgCount = imgSettings[config.imageCount].count
 			// Add found images to the main array
 			images = images.concat(tempImages)
 		}
+	}
+
+	// File operation functions
+	function readdirSync(path){
+		return fs.readdirSync(path)
+		//return ipcRenderer.sendSync('read-dir', path)
+	}
+	function readFileSync(path){
+		return fs.readFileSync(path, 'utf8')
+		//return ipcRenderer.sendSync('read-file', path)
+	}
+	function writeFileSync(path, contents){
+		fs.writeFileSync(path, contents)
+		//return ipcRenderer.sendSync('write-file', path, contents)
+	}
+	function existsSync(path){
+		return fs.existsSync(path)
+		//return ipcRenderer.sendSync('exists', path)
+	}
+	function lstatSync(path){
+		return fs.lstatSync(path).isDirectory()
+		//return ipcRenderer.sendSync('lstat', path)
 	}
 
 // Misc event listeners
@@ -308,7 +334,7 @@ let imgCount = imgSettings[config.imageCount].count
 		mousePosition.y = e.clientY
 	});
 
-	// Shortcut listener for rating images with number keys
+	// Keyboard shortcut listener
 	window.addEventListener('keyup', (e) => {
 		if(e.key == '5' || e.key == '4' || e.key == '3' || e.key == '2' || e.key == '1'){
 			let element = document.elementFromPoint(mousePosition.x, mousePosition.y)
@@ -353,6 +379,18 @@ let imgCount = imgSettings[config.imageCount].count
 			if(img.class == 'pausedTimer') pauseImg(img)
 		}
 	})
+	// Change all button - Rerolls all images
+	document.querySelector('#changeButton').addEventListener('click', () => {
+		for(i = 0; i < imgCount; i++){
+			let img = document.querySelector('#img' + i)
+			changeImg(img, i, 'click')
+		}
+	})
+	// Settings button - Opens config window
+	document.querySelector('#configButton').addEventListener('click', () => {
+		// Open new window
+		ipcRenderer.send('open-window', 600, 600, 'config.html', false, false)
+	})
 	// Save grid button - Saves all current images to an array (for the current session only)
 	// Grids can be cycled through with the corresponding image pool setting
 	document.querySelector('#saveGridButton').addEventListener('click', () => {
@@ -376,40 +414,40 @@ let imgCount = imgSettings[config.imageCount].count
 		// Update variable and save to config file
 		imagePool = e.target.value
 		config.imagePool = e.target.value
-		fs.writeFileSync(configPath, JSON.stringify(config, null, 4))
+		writeFileSync(configPath, JSON.stringify(config, null, 4))
 	})
 	// Image count selector - Controls the number of images in the window (only applied on reload)
 	document.querySelector('#imageCountSelector').addEventListener('change', (e) => {
 		// Update variable and save to config file
 		imageCount = e.target.value
 		config.imageCount = e.target.value
-		fs.writeFileSync(configPath, JSON.stringify(config, null, 4))
+		writeFileSync(configPath, JSON.stringify(config, null, 4))
 	})
 	// Left click action selector - Controls what action is performed when an image is clicked on
 	document.querySelector('#clickActionSelector').addEventListener('change', (e) => {
 		// Update variable and save to config file
 		clickAction = e.target.value
 		config.clickAction = e.target.value
-		fs.writeFileSync(configPath, JSON.stringify(config, null, 4))
+		writeFileSync(configPath, JSON.stringify(config, null, 4))
 	})
 	// Delay input field - Sets the interval for images being cycled in seconds
 	document.querySelector('#delayInput').addEventListener('change', (e) => {
 		// Update variable and save to config file
 		delay = e.target.value
 		config.delay = e.target.value
-		fs.writeFileSync(configPath, JSON.stringify(config, null, 4))
+		writeFileSync(configPath, JSON.stringify(config, null, 4))
 	})
 	// Offset input field - Sets the difference in seconds between the individual images in the grid cycling
 	document.querySelector('#offsetInput').addEventListener('change', (e) => {
 		// Update variable and save to config file
 		offset = e.target.value
 		config.offset = e.target.value
-		fs.writeFileSync(configPath, JSON.stringify(config, null, 4))
+		writeFileSync(configPath, JSON.stringify(config, null, 4))
 	})
 	// Change when rated checkbox - If enabled, 
 	document.querySelector('#changeWhenRatedCheckbox').addEventListener('change', (e) => {
 		// Update variable and save to config file
 		changeWhenRated = e.target.checked
 		config.changeWhenRated = e.target.checked
-		fs.writeFileSync(configPath, JSON.stringify(config, null, 4))
+		writeFileSync(configPath, JSON.stringify(config, null, 4))
 	})

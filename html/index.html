@@ -3,14 +3,18 @@
 	<head>
 		<meta charset="UTF-8">
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
-		<link rel="stylesheet" href="./style.css">
+		<meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline'">
+		<link rel="stylesheet" href="../stylesheets/style.css">
 		<title>Slideshow Gallery</title>
 	</head>
 	<body>
 		
 		<!-- Flex box for inputs and buttons -->
 		<div class="flex-container">
+			<button type="button" id="configButton">Define sources</button>
 			<label>Image count: </label> <select name="imageCount" id="imageCountSelector">
+				<option value="eighteen">18</option>
+				<option value="twelve">12</option>
 				<option value="eight">8</option>
 				<option value="one">1</option>
 			</select>
@@ -18,6 +22,7 @@
 			<label>Offset: </label> <input type="text" id="offsetInput" name="offset" style="width: 30px" value="0">
 			<button type="button" id="pauseButton">Pause all</button>
 			<button type="button" id="continueButton">Resume all</button>
+			<button type="button" id="changeButton">Change all</button>
 			<label>Image pool: </label> <select name="imagePool" id="imagePoolSelector">
 				<option value="random">Random</option>
 				<option value="unrated">Unrated</option>
@@ -42,7 +47,7 @@
 		<div id="imgDisplay"></div>
 		
 		<!-- Renderer script -->
-		<script src="./renderer.js"></script>
+		<script src="../app/renderer.js"></script>
 		
 	</body>
 </html>
