@@ -4,19 +4,19 @@
 An image slideshow gallery with the ability to rate images for sorting purposes
 
 ## Basic functionality
-I made this app for the main purpose of cycling through large amounts of images (mostly AI generated) so I could get some inspiration, rate the images and then get rid of the ones I've rated lowly.
+I made this app for the main purpose of cycling through large amounts of images so I could get some inspiration, rate the images and then get rid of the ones I've rated lowly.
 
 ## Flaws and missing features
-Since I made this app mostly for my own use it currently isn't as flexible or secure as it should be. This is why there are several issues:
-- The renderer process has no contextIsolation and it has nodeIntegration. These are security risks and I've used them for my own comfort. I do plan to undo them however
-- The UI looks bad. I probably won't change it unless I'm super bored either
-- At the moment you can't even define the folder paths for images in the UI. They have to be added directly to the config file
+- The UI looks bad
 - The app always starts maximized and it does not remember its last position / size after you close it
-- Other "minor" limitations, see below
+- If a previously added folder is missing it currently simply won't be scanned for files anymore but will remain in the config as is
+- When the active folders are changed the main window has to be reloaded for the available images to change accordingly
+- The number of images visible in the grid is not freely configurable and it requires a reload after every change
+- Images change very abrubtly as there is no fading animation
 
 # Detailed functionality
 ## Files
-Installation is user-based. The app will be installed in your local appdata folder (for example `C:\Users\%username%\AppData\Local\slideshow_gallery` in Windows). Shortcuts will be created during installation.
+Installation is user-based. The app will be installed in your local appdata folder (for example `C:\Users\%username%\AppData\Local\slideshow_gallery` in Windows). Start menu and desktop shortcuts will be created during installation. Delete them if you don't need them.
 The app's files are stored in your appdata directory, within the subfolder slideshow-gallery (for example `C:\Users\%username%\Appdata\Roaming\slideshow-gallery` in Windows).
 ### config.json
 This file contains the app's configs. Whenever you change a setting in the GUI it will be saved to this file. When the app starts it will look for the file and load the saved configurations.
@@ -29,17 +29,23 @@ Here is an example config:
     "changeWhenRated": true,
     "clickAction": "zoom",
     "imageCount": "eight",
+    "movePath": "D:\\Images\\Bad images",
     "sourcePaths": [
-        "D:/Images/New"
-    ],
-    "movePath": "D:/Images/Bad images"
+        {
+            "path": "E:",
+            "state": false,
+            "folders": [
+                {
+                    "path": "Images",
+                    "state": true,
+                    "folders": []
+                }
+        },
+    ]
 }
 ```
-There are two settings here which are currently not available in the GUI:
-- sourcePaths: An array of strings representing folder paths where the app will recursively look for image files to use
-- movePath: A single string representing a folder path where the app will move files when you press the "Move all low rated" button or when you right click an image and select "Move file"
 ### ratings.json
-An image can be rated using the right click context menu or by pressing the corresponding number key (1, 2, 3, 4 or 5) while hovering the cursor over it. Your image ratings are stored in this file. Currently one limitation of this application is that image ratings are saved with their folder path to avoid duplicate naming issues. However this means that if you move an image it will go back to being unrated. The rating will still be in the list but the file will no longer be associated with it. I plan on changing this behavior if possible.
+An image can be rated using the right click context menu or by pressing the corresponding number key (1, 2, 3, 4 or 5) while hovering the cursor over it. Your image ratings are stored in this file. Previously rated images that can no longer be found by the app will be re-assigned their current paths if the app finds them in your currently loaded folders.
 
 ## GUI
 Here is an example of what the application window looks like:
