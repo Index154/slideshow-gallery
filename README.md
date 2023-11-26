@@ -40,6 +40,7 @@ Here is an example config:
                     "state": true,
                     "folders": []
                 }
+            ]
         }
     ]
 }
