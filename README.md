@@ -40,7 +40,7 @@ Here is an example config:
                     "state": true,
                     "folders": []
                 }
-        },
+        }
     ]
 }
 ```
@@ -83,6 +83,26 @@ If checked, images will change after you rate them. Even if an image is "paused"
 For the sake of knowing how much progress you've made there is also the item "Unrated count" which shows you how many images you have yet to rate.
 ### Move all low rated
 Moves all images rated 1 or 2 to the configured target folder, see **config.json**.
+
+## Path config menu
+![image](https://github.com/Index154/slideshow-gallery/assets/105119758/32e0c0cd-99e3-49cb-8781-14e4ed6bf4d9)
+Here you can configure the image source paths as well as the "move" action target path.
+After you add, remove, enable or disable something here you currently have to reload the main window with 'R' for the changes to take effect!
+### Add source
+Pressing this button will open a dialog for selecting one folder to add as a source.
+### Add source with subfolders
+Same as above. However, this one will also add all subfolders automatically.
+### Inherit state from parent folder?
+This checkbox currently does nothing. It's a work in progress.
+### Select move target folder
+Opens a dialog for selecting the "move" target folder. The currently set folder is shown next to the button.
+### Enable all
+Enables all configured folder paths.
+### Disable all
+Disables all configured folder paths.
+### List of paths
+You can see a list of all your added paths in this window. They will be shown as a hierarchical tree.
+A folder and all its subfolders will be removed if you press the Delete button next to it.
 
 ## Context menu (right click)
 ![image](https://github.com/Index154/slideshow-gallery/assets/105119758/283f41cb-0e53-46fd-8d79-ad0210c40c4e)
