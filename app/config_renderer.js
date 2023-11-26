@@ -97,7 +97,7 @@ function folderDialog(folderType, includeSubfolders){
             moveTarget.innerText = "Current: " + config.movePath
         }
         fs.writeFileSync(configPath, JSON.stringify(config, null, 4))
-        ipcRenderer.send('reload')
+        //ipcRenderer.send('reload')
     }
 }
 
@@ -163,7 +163,8 @@ function scanFolder(foldersToScan){
     let foundFolders = []
     while(foldersToScan.length > 0){
         // If it's a directory
-        if(fs.lstatSync(foldersToScan[0]).isDirectory() && !foldersToScan[0].includes('.driveupload')){
+        if(fs.lstatSync(foldersToScan[0]).isDirectory() && !foldersToScan[0].includes('.tmp')){
+            console.log(foldersToScan[0])
             // Get all file and folder names within
             let tempFiles = fs.readdirSync(foldersToScan[0])
             for(i = 0; i < tempFiles.length; i++){
