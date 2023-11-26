@@ -1,4 +1,4 @@
-![image](https://github.com/Index154/slideshow-gallery/assets/105119758/6151281c-0270-4387-b355-f8cd36e2ae71)
+![image](https://github.com/Index154/slideshow-gallery/assets/105119758/db8094fe-35ae-4389-99ea-ffdb959b8a29)
 
 # Introduction
 An image slideshow gallery with the ability to rate images for sorting purposes
@@ -52,6 +52,8 @@ An image can be rated using the right click context menu or by pressing the corr
 Here is an example of what the application window looks like:
 ![c567_01](https://github.com/Index154/slideshow-gallery/assets/105119758/20c0045e-6619-4994-831e-75f1f5fa8afc)
 There is a small bar at the top with several buttons and settings. I will now explain them in order.
+### Define paths
+Press this button to configure the source folder paths to be scanned for images as well as the "move" target path. See more details below.
 ### Image count
 Allows you to select the amount of images to display. Currently you can only choose between 8 and 1. This setting only goes into effect after reloading the app (restarting it or pressing R).
 ### Delay
@@ -83,7 +85,7 @@ When pressed, this button saves all currently active / visible images. As long a
 If checked, images will change after you rate them. Even if an image is "paused" it will still work. This is useful for iterating through all your unrated images until you're done with them.
 For the sake of knowing how much progress you've made there is also the item "Unrated count" which shows you how many images you have yet to rate.
 ### Move all low rated
-Moves all images rated 1 or 2 to the configured target folder, see **config.json**.
+Moves all images rated 1 or 2 to the configured move target folder, see **Select move target folder**.
 
 ## Path config menu
 ![image](https://github.com/Index154/slideshow-gallery/assets/105119758/32e0c0cd-99e3-49cb-8781-14e4ed6bf4d9)
@@ -111,10 +113,11 @@ A folder and all its subfolders will be removed if you press the Delete button n
 You can right click an image and select an action to perform on it:
 - Paused: Can be used to pause or unpause an image
 - Zoom: Can be used to open an image in a new window at a larger size. Clicking anywhere in this window will close it again
+- Change: Manually changes / rerolls an image. Works on "paused" images as well
 - Open in folder: Opens the folder the image is in and selects the image
 - Open: Opens the image with your OS' default application
-- Rate 5 to 1: Can be used to rate the image, see **ratings.json**.
-- Move file: Moves the file to the configured target folder, see **config.json**.
+- Rate 5 to 1: Can be used to rate the image, see **ratings.json**
+- Move file: Moves the file to the configured target folder, see **Select move target folder**
 
 ## Keyboard shortcuts
 - R: Reloads the window
