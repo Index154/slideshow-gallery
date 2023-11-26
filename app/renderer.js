@@ -76,6 +76,7 @@ let imgCount = imgSettings[config.imageCount].count
 			if(parseInt(ratings[tempImg].rating) > 4) highestRatedImages.push(tempImg)
 		}
 	}
+	findFiles()
 	document.querySelector('#unratedCounter').innerHTML = unratedImages.length
 
 // Add images to HTML + start timeouts
@@ -221,6 +222,7 @@ let imgCount = imgSettings[config.imageCount].count
 	// Scan folder for images function
 	function scanFolder(folderPath){
 		// Get all file and folder names within
+		if(!fs.existsSync(folderPath)) {ipcRenderer.send('open-window', 450, 400, 'missing-folder.html', false, false)}
 		let tempImages = fs.readdirSync(folderPath)
 		for(i = 0; i < tempImages.length; i++){
 			
@@ -236,6 +238,32 @@ let imgCount = imgSettings[config.imageCount].count
 		}
 		// Add found images to the main array
 		images = images.concat(tempImages)
+	}
+	// Fix missing file paths in ratings
+	function findFiles(){
+		// Build an object with the unrated image file names
+		let unratedImagesObj = {}
+		for(i = 0; i < unratedImages.length; i++){
+			let parts = unratedImages[i].split('/')
+			//console.log(parts[parts.length - 1].trim())
+			unratedImagesObj[parts[parts.length - 1]] = unratedImages[i]
+		}
+		// Check for missing files in the ratings
+		for(var e in ratings){
+			if(Object.prototype.hasOwnProperty.call(ratings, e)){
+				if(!fs.existsSync(e)) {
+					let fileParts = e.split('/')
+					// Look for the file in the unrated images array
+					//console.log(fileParts[fileParts.length - 1])
+					if(fileParts[fileParts.length - 1] in unratedImagesObj){
+						ratings[unratedImagesObj[fileParts[fileParts.length - 1]]] = ratings[e]
+						delete ratings[e]
+						unratedImages.splice(unratedImages.indexOf(e), 1)
+					}
+				}
+			}
+		}
+		fs.writeFileSync(ratingsPath, JSON.stringify(ratings, null, 4))
 	}
 
 // Misc event listeners
@@ -282,11 +310,16 @@ let imgCount = imgSettings[config.imageCount].count
 			rateImg(element, rating)
 		}
 		// Zoom in (open image in new window)
-		else if(command == "zoom"){
+		else if(command == 'zoom'){
 			zoom(element)
 		}
+		// Change image
+		else if(command == 'change-image'){
+			let id = parseInt(element.id.substring(element.id.length - 1, element.id.length))
+			changeImg(element, id, 'click')
+		}
 		// Move file to the configured folder
-		else if(command == "move-file"){
+		else if(command == 'move-file'){
 			let image = decodeImg(element.src)
 			// Remove from low rated images list
 			// TODO: Also account for other image arrays here

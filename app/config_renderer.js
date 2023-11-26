@@ -34,12 +34,19 @@ window.addEventListener('keyup', (e) => {
     }
 }, true)
 
+// Add move target folder
+let moveTarget = document.querySelector('#moveTarget')
+moveTarget.innerText = "Current: " + config.movePath
+
 // Add folder(s) button listeners
 document.querySelector('#addFolderButton').addEventListener('click', (e) => {
-    folderDialog(false)
+    folderDialog('source', false)
 })
 document.querySelector('#addFoldersButton').addEventListener('click', (e) => {
-    folderDialog(true)
+    folderDialog('source', true)
+})
+document.querySelector('#pickMoveFolderButton').addEventListener('click', (e) => {
+    folderDialog('move', false)
 })
 
 // Enable all button listener
@@ -70,19 +77,24 @@ function changeAllStates(array, newState) {
 }
 
 // Add folder dialog function
-function folderDialog(includeSubfolders){
+function folderDialog(folderType, includeSubfolders){
     let pickedPath = ipcRenderer.sendSync('open-dialog')
     // If the user cancels the action then it will be undefined
     if(pickedPath !== undefined) {
         // Try adding the path(s) to the config
-        addFolder(pickedPath[0].split('\\'), config.sourcePaths)
-        if(includeSubfolders){
-            // Get all subfolders
-            let foundFolders = scanFolder(pickedPath[0])
-            for(i = 0; i < foundFolders.length; i++){
-                // Add all subfolders to the config as well
-                addFolder(foundFolders[i].split('\\'), config.sourcePaths)
+        if(folderType == 'source'){
+            addFolder(pickedPath[0].split('\\'), config.sourcePaths)
+            if(includeSubfolders){
+                // Get all subfolders
+                let foundFolders = scanFolder(pickedPath[0])
+                for(i = 0; i < foundFolders.length; i++){
+                    // Add all subfolders to the config as well
+                    addFolder(foundFolders[i].split('\\'), config.sourcePaths)
+                }
             }
+        }else{
+            config.movePath = pickedPath[0]
+            moveTarget.innerText = "Current: " + config.movePath
         }
         fs.writeFileSync(configPath, JSON.stringify(config, null, 4))
         ipcRenderer.send('reload')
@@ -110,10 +122,9 @@ function insertPath(folder, array){
     // Event listener for the delete button
     let deleteButton = document.querySelector('#deletePath-' + folderId)
     deleteButton.addEventListener('click', (e) => {
-        let div = document.querySelector('#div-' + path)
-        div.remove()
         array.splice(array.indexOf(folder), 1)
         fs.writeFileSync(configPath, JSON.stringify(config, null, 4))
+        ipcRenderer.send('reload')
     })
 }
 

@@ -181,11 +181,15 @@ app.on('window-all-closed', () => {
 				checked: pausedBox,
 				click: () => { e.sender.send('context-menu-command', 'pause-resume', rightClickPosition) }
 			},
-			{type: 'separator'},
 			{
 				// Open image in new window
 				label: 'Zoom',
 				click: () => { e.sender.send('context-menu-command', 'zoom', rightClickPosition) }
+			},
+			{
+				// Open image in new window
+				label: 'Change',
+				click: () => { e.sender.send('context-menu-command', 'change-image', rightClickPosition) }
 			},
 			{
 				// Show image in folder view
@@ -225,7 +229,7 @@ app.on('window-all-closed', () => {
 	ipcMain.on('move-file', (e, path) => {
 		let pathParts = path.split('/')
 		fileName = pathParts[pathParts.length - 1]
-		fs.rename(path, movePath + fileName, (err) => {if(err) throw err})
+		fs.rename(path, movePath + "\\" + fileName, (err) => {if(err) throw err})
 	})
 	// Return paths and configs to the renderer when requested
 	ipcMain.on('get-config', (e) => { 
