@@ -89,6 +89,7 @@ Moves all images rated 1 or 2 to the configured move target folder, see **Select
 
 ## Path config menu
 ![image](https://github.com/Index154/slideshow-gallery/assets/105119758/32e0c0cd-99e3-49cb-8781-14e4ed6bf4d9)
+
 Here you can configure the image source paths as well as the "move" action target path.
 After you add, remove, enable or disable something here you currently have to reload the main window with 'R' for the changes to take effect!
 ### Add source
