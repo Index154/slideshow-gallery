@@ -183,9 +183,24 @@ let imgCount = imgSettings[config.imageCount].count
 
 	// Zoom in on image function
 	function zoom(element){
+		// Get image dimensions, then limit them based on screen size
+		let image = new Image()
+		image.src = element.src
+		let dims = [image.naturalWidth, image.naturalHeight]
+		let mult = 1
+		if(dims[1] > window.screen.availHeight) {
+			mult = window.screen.availHeight / dims[1]
+		} else if(dims[0] * mult > window.screen.availWidth) {
+			mult = window.screen.availWidth / dims[0]
+		}
+		dims[0] = dims[0] * mult
+		dims[1] = dims[1] * mult
+
 		// Open new window with only the image in it
-		let posX = window.screenLeft - 450 + window.outerWidth / 2
-		const imgWindow = window.open(element.src, '_blank', 'frame=false,width=900,height=900,x=' + posX + ',y=0')
+		let posX = window.screenLeft - dims[0] / 2 + window.outerWidth / 2
+		let posY = 0
+		if(dims[1] < window.screen.availHeight) posY = (window.screen.availHeight - dims[1]) / 2
+		const imgWindow = window.open(element.src, '_blank', 'frame=false,width=' + dims[0] + ',height=' + dims[1] + ',x=' + posX + ',y=' + posY)
 		// Add left click event listener to new window to make any click close it
 		imgWindow.addEventListener('click', () => {
 			imgWindow.close()
@@ -207,8 +222,10 @@ let imgCount = imgSettings[config.imageCount].count
 		unratedImages.splice(unratedImages.indexOf(image), 1)
 		document.querySelector('#unratedCounter').innerHTML = unratedImages.length
 		// Change image if the relevant setting is enabled
-		let id = parseInt(element.id.substring(element.id.length - 1, element.id.length))
-		if(changeWhenRated) changeImg(element, id, 'click')
+		if(changeWhenRated) {
+			let id = parseInt(element.id.substring(element.id.length - 1, element.id.length))
+			changeImg(element, id, 'click')
+		}
 	}
 
 	// Scan all configured paths function
