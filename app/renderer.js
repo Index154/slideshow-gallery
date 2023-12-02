@@ -161,10 +161,16 @@ let imgCount = imgSettings[config.imageCount].count
 	// Image changing function
 	function changeImg(element, id, source){
 		// Prevent changing the image if it is paused, unless the function was called with the click argument
-		// TODO: Add fancy animation maybe
 		if(element.class != 'pausedTimer' || source == 'click'){
-			let newImg = getRandImg(parseInt(id))
-			element.src = newImg
+			let fadeDelay = 250
+			let classList = element.classList
+			classList.add('faded')
+			
+			let timer = setTimeout(() => {
+				let newImg = getRandImg(parseInt(id))
+				element.src = newImg
+				classList.remove('faded')
+			}, fadeDelay)
 		}
 	}
 

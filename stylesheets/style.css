@@ -38,11 +38,17 @@ img {
 	text-align: center;
 }
 
-.container:hover .overlay {
-  opacity: 1;
-}
-
 input[type=checkbox] {
     -webkit-transform: scale(1.3); /* Safari and Chrome */
     transform: scale(1.3);
+}
+
+img.faded {
+	opacity: 0;
+	transition: opacity 0.25s ease;
+}
+
+img {
+	opacity: 1;
+	transition: opacity 0.25s ease;
 }
