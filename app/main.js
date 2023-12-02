@@ -83,6 +83,7 @@ if(!fs.existsSync(configPath)){
 		changeWhenRated: true,
 		clickAction: 'pauseResume',
 		imageCount: 'eight',
+		windowPosition: [0, 0],
 		sourcePaths: [],
 		movePath: ''
 	}
@@ -100,8 +101,8 @@ if(!fs.existsSync(ratingsPath)){
 }
 
 // Window creation function
-const createWindow = (width, height, htmlFile, maximize, alwaysOnTop) => {
-	
+const createWindow = (width, height, posX, htmlFile, maximize, alwaysOnTop) => {
+
 	// Window object
 	const win = new BrowserWindow({
 		width: width,
@@ -112,6 +113,7 @@ const createWindow = (width, height, htmlFile, maximize, alwaysOnTop) => {
 			nodeIntegration: true
 		}
 	})
+	win.setPosition(posX, win.getPosition()[1])
 	
 	// Maximize window and load HTML
 	win.removeMenu()
@@ -127,22 +129,16 @@ const createWindow = (width, height, htmlFile, maximize, alwaysOnTop) => {
         win.focus();
     });
 
-	// Define settings for other windows opened through the renderer
-	/*win.webContents.setWindowOpenHandler(() => {
-		return {
-			action: 'allow',
-			overrideBrowserWindowOptions: {
-				frame: false,
-				width: 900,
-				height: 900
-			}
-		}
-	})*/
+	return win
 }
 
 // Create the main window when ready
 app.whenReady().then(() => {
-	createWindow(1800, 1000, 'index.html', true, false)
+	const mainWin = createWindow(1800, 1000, config.windowPosition[0], 'index.html', true, false)
+	mainWin.on("close", () => {
+		config.windowPosition = mainWin.getPosition()	
+		fs.writeFileSync(configPath, JSON.stringify(config, null, 4))
+	})
   
 	// MacOS listener: Open new window when the app is "started" while already running
 	app.on('activate', () => {
@@ -261,6 +257,6 @@ app.on('window-all-closed', () => {
 		})
 	})
 	// Open window
-	ipcMain.on('open-window', (e, width, height, html, max, alwaysOnTop) => {
-		createWindow(width, height, html, max, alwaysOnTop)
+	ipcMain.on('open-window', (e, width, height, posX, html, max, alwaysOnTop) => {
+		createWindow(width, height, parseInt(posX), html, max, alwaysOnTop)
 	})

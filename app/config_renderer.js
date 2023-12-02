@@ -97,7 +97,7 @@ function folderDialog(folderType, includeSubfolders){
             moveTarget.innerText = "Current: " + config.movePath
         }
         fs.writeFileSync(configPath, JSON.stringify(config, null, 4))
-        //ipcRenderer.send('reload')
+        ipcRenderer.send('reload')
     }
 }
 

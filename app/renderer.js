@@ -23,6 +23,7 @@ let imgSettings = {
 	eighteen: {dim: 240, count: 18},
 	twelve: {dim: 260, count: 12},
 	eight: {dim: 375, count: 8},
+	eightSmall: {dim: 280, count: 8},
 	one: {dim: 700, count: 1}
 }
 let imgDim = imgSettings[config.imageCount].dim
@@ -183,7 +184,8 @@ let imgCount = imgSettings[config.imageCount].count
 	// Zoom in on image function
 	function zoom(element){
 		// Open new window with only the image in it
-		const imgWindow = window.open(element.src, '_blank', 'frame=false,width=900,height=900')
+		let posX = window.screenLeft - 450 + window.outerWidth / 2
+		const imgWindow = window.open(element.src, '_blank', 'frame=false,width=900,height=900,x=' + posX + ',y=0')
 		// Add left click event listener to new window to make any click close it
 		imgWindow.addEventListener('click', () => {
 			imgWindow.close()
@@ -222,7 +224,10 @@ let imgCount = imgSettings[config.imageCount].count
 	// Scan folder for images function
 	function scanFolder(folderPath){
 		// Get all file and folder names within
-		if(!fs.existsSync(folderPath)) {ipcRenderer.send('open-window', 450, 400, 'missing-folder.html', false, false)}
+		if(!fs.existsSync(folderPath)) {
+			let posX = window.screenLeft - 225 + window.outerWidth / 2
+			ipcRenderer.send('open-window', 450, 400, posX, 'missing-folder.html', false, false)
+		}
 		let tempImages = fs.readdirSync(folderPath)
 		for(i = 0; i < tempImages.length; i++){
 			
@@ -394,7 +399,8 @@ let imgCount = imgSettings[config.imageCount].count
 	// Settings button - Opens config window
 	document.querySelector('#configButton').addEventListener('click', () => {
 		// Open new window
-		ipcRenderer.send('open-window', 600, 850, 'config.html', false, false)
+		let posX = window.screenLeft - 300 + window.outerWidth / 2
+		ipcRenderer.send('open-window', 600, 850, posX, 'config.html', false, false)
 	})
 	// Save grid button - Saves all current images to an array (for the current session only)
 	// Grids can be cycled through with the corresponding image pool setting
