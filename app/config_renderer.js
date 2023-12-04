@@ -24,10 +24,7 @@ loadFolders(config.sourcePaths)
 
 // Keyboard shortcut listener
 window.addEventListener('keyup', (e) => {
-    if(e.key == '5' || e.key == '4' || e.key == '3' || e.key == '2' || e.key == '1'){
-        let element = document.elementFromPoint(mousePosition.x, mousePosition.y)
-        if(element !== undefined && element.src !== undefined) rateImg(element, e.key)
-    }else if(e.key == 'r'){
+    if(e.key == 'r'){
         ipcRenderer.send('reload')
     }else if(e.key == 'Control'){
         ipcRenderer.send('dev-tools')
@@ -164,7 +161,6 @@ function scanFolder(foldersToScan){
     while(foldersToScan.length > 0){
         // If it's a directory
         if(fs.lstatSync(foldersToScan[0]).isDirectory() && !foldersToScan[0].includes('.tmp')){
-            console.log(foldersToScan[0])
             // Get all file and folder names within
             let tempFiles = fs.readdirSync(foldersToScan[0])
             for(i = 0; i < tempFiles.length; i++){

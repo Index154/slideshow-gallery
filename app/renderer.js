@@ -273,7 +273,6 @@ let imgCount = imgSettings[config.imageCount].count
 		let unratedImagesObj = {}
 		for(i = 0; i < unratedImages.length; i++){
 			let parts = unratedImages[i].split('/')
-			//console.log(parts[parts.length - 1].trim())
 			unratedImagesObj[parts[parts.length - 1]] = unratedImages[i]
 		}
 		// Check for missing files in the ratings
@@ -282,7 +281,6 @@ let imgCount = imgSettings[config.imageCount].count
 				if(!fs.existsSync(e)) {
 					let fileParts = e.split('/')
 					// Look for the file in the unrated images array
-					//console.log(fileParts[fileParts.length - 1])
 					if(fileParts[fileParts.length - 1] in unratedImagesObj){
 						ratings[unratedImagesObj[fileParts[fileParts.length - 1]]] = ratings[e]
 						delete ratings[e]
