@@ -9,7 +9,8 @@ let fallbackImage = path.join('..', 'images', 'no-images.png')
 let ratingsPath = path.join(appdataPath, 'ratings.json')
 let configPath = path.join(appdataPath, 'config.json')
 let config = JSON.parse(fs.readFileSync(configPath, 'utf8'))
-let latestGrid = []
+let latestSavedGrid = []
+//config.latestGrid = []
 let mousePosition = {x: 0, y: 0}
 
 // Image count and size
@@ -81,7 +82,7 @@ let imgCount = imgSettings[config.imageCount].count
 	// Prepare starting images
 	let startingImages = [];
 	for(i = 0; i < imgCount; i++){
-		latestGrid.push(0)	// Set the state of each image for the saved grids cycle later
+		latestSavedGrid.push(0)	// Set the state of each image for the saved grids cycle later
 		let img = getRandImg(i)
 		startingImages[i] = '<img id="img' + i + '" src="' + img + '" width="' + imgDim + '" height="' + imgDim + '" style="border-style: solid; border-width: 3px; border-color: white"></img>'
 	}
@@ -139,10 +140,10 @@ let imgCount = imgSettings[config.imageCount].count
 			case 'savedGrids':
 				if(savedGrids.length > 1){
 					// savedGrids is an array of arrays of image paths (one image for each grid slot)
-					let newSrc = savedGrids[latestGrid[id]][id]
-					let nextGrid = latestGrid[id] + 1
+					let newSrc = savedGrids[latestSavedGrid[id]][id]
+					let nextGrid = latestSavedGrid[id] + 1
 					if(nextGrid > savedGrids.length - 1) nextGrid = 0
-					latestGrid[id] = nextGrid
+					latestSavedGrid[id] = nextGrid
 					return newSrc
 				}
 			// Random (default setting / fallback)
@@ -165,6 +166,7 @@ let imgCount = imgSettings[config.imageCount].count
 			let timer = setTimeout(() => {
 				let newImg = getRandImg(parseInt(id))
 				element.src = newImg
+				//config.latestGrid[id] = newImg
 				classList.remove('faded')
 			}, fadeDelay)
 		}
