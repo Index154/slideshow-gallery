@@ -43,7 +43,8 @@ function handleSquirrelEvent() {
 	const squirrelEvent = process.argv[1]
 	switch (squirrelEvent) {
 		case '--squirrel-firstrun':
-			// TODO: Open configuration dialog
+			// Open config window
+			createWindow(600, 850, 0, 'config.html', false, false)
 			return false
 
 		case '--squirrel-install':
@@ -84,6 +85,7 @@ if(!fs.existsSync(configPath)){
 		clickAction: 'pauseResume',
 		imageCount: 'eight',
 		windowPosition: [0, 0],
+		toggleSubFolders: false,
 		sourcePaths: [],
 		movePath: ''
 	}
@@ -136,7 +138,8 @@ const createWindow = (width, height, posX, htmlFile, maximize, alwaysOnTop) => {
 app.whenReady().then(() => {
 	const mainWin = createWindow(1800, 1000, config.windowPosition[0], 'index.html', true, false)
 	mainWin.on("close", () => {
-		config.windowPosition = mainWin.getPosition()	
+		config = JSON.parse(fs.readFileSync(configPath, 'utf8'))
+		config.windowPosition = mainWin.getPosition()
 		fs.writeFileSync(configPath, JSON.stringify(config, null, 4))
 	})
   

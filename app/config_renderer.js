@@ -31,9 +31,12 @@ window.addEventListener('keyup', (e) => {
     }
 }, true)
 
-// Add move target folder
+// Display current move target folder
 let moveTarget = document.querySelector('#moveTarget')
 moveTarget.innerText = "Current: " + config.movePath
+// Update toggle subfolder checkbox state
+let toggleSubFolders = config.toggleSubFolders
+document.querySelector('#toggleSubCheckbox').checked = toggleSubFolders
 
 // Add folder(s) button listeners
 document.querySelector('#addFolderButton').addEventListener('click', (e) => {
@@ -64,10 +67,17 @@ document.querySelector('#disableAllButton').addEventListener('click', (e) => {
     changeAllStates(config.sourcePaths, false)
     fs.writeFileSync(configPath, JSON.stringify(config, null, 4))
 })
+// Toggle subfolders checkbox - If enabled, toggling a folder checkbox will also affect all its subfolders
+document.querySelector('#toggleSubCheckbox').addEventListener('change', (e) => {
+    if(e.target.checked) config.toggleSubFolders = true
+    else{config.toggleSubFolders = false}
+    fs.writeFileSync(configPath, JSON.stringify(config, null, 4))
+})
 
 // Change all folder states function
 function changeAllStates(array, newState) {
     array.forEach(function(folder){
+        console.log(folder)
         folder.state = newState
         changeAllStates(folder.folders, newState)
     }, array, newState)
@@ -111,9 +121,16 @@ function insertPath(folder, array){
 
     // Left click event listener for the checkbox
     checkbox.addEventListener('change', (e) => {
-        if(e.target.checked) array[array.indexOf(folder)].state = true
-        else{array[array.indexOf(folder)].state = false}
+        // Toggle the clicked checkbox
+        let newState = true
+        if(!e.target.checked) newState = false
+        array[array.indexOf(folder)].state = newState
+
+        // Toggle subfolders if enabled
+        if(config.toggleSubFolders) changeAllStates(array[array.indexOf(folder)].folders, newState)
+
         fs.writeFileSync(configPath, JSON.stringify(config, null, 4))
+        if(config.toggleSubFolders) ipcRenderer.send('reload')
     })
 
     // Event listener for the delete button

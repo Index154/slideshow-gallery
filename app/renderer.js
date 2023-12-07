@@ -9,12 +9,6 @@ let fallbackImage = path.join('..', 'images', 'no-images.png')
 let ratingsPath = path.join(appdataPath, 'ratings.json')
 let configPath = path.join(appdataPath, 'config.json')
 let config = JSON.parse(fs.readFileSync(configPath, 'utf8'))
-/*let fromMain = ipcRenderer.sendSync('get-config')
-let fallbackImage = fromMain.fallbackImage
-let ratingsPath = fromMain.ratingsPath
-let configPath = fromMain.configPath
-let config = fromMain.config
-*/
 let latestGrid = []
 let mousePosition = {x: 0, y: 0}
 
@@ -39,9 +33,11 @@ let imgCount = imgSettings[config.imageCount].count
 	document.querySelector('#clickActionSelector').value = clickAction
 	// Delay (interval between images changing in seconds)
 	let delay = parseInt(config.delay)
+	if(delay < 1) delay = 999999
 	document.querySelector('#delayInput').value = delay
 	// Offset (difference in seconds between the individual images in the grid changing)
 	let offset = parseInt(config.offset)
+	if(offset < 1) offset = 999999
 	document.querySelector('#offsetInput').value = offset
 	// Whether images should change after being rated
 	let changeWhenRated = config.changeWhenRated
@@ -417,6 +413,10 @@ let imgCount = imgSettings[config.imageCount].count
 			changeImg(img, i, 'click')
 		}
 	})
+	// Reload button - Reloads window
+	document.querySelector('#reloadButton').addEventListener('click', () => {
+		ipcRenderer.send('reload')
+	})
 	// Settings button - Opens config window
 	document.querySelector('#configButton').addEventListener('click', () => {
 		// Open new window
@@ -454,6 +454,7 @@ let imgCount = imgSettings[config.imageCount].count
 		imageCount = e.target.value
 		config.imageCount = e.target.value
 		fs.writeFileSync(configPath, JSON.stringify(config, null, 4))
+		ipcRenderer.send('reload')
 	})
 	// Left click action selector - Controls what action is performed when an image is clicked on
 	document.querySelector('#clickActionSelector').addEventListener('change', (e) => {
@@ -466,6 +467,7 @@ let imgCount = imgSettings[config.imageCount].count
 	document.querySelector('#delayInput').addEventListener('change', (e) => {
 		// Update variable and save to config file
 		delay = e.target.value
+		if(delay < 1) delay = 999999
 		config.delay = e.target.value
 		fs.writeFileSync(configPath, JSON.stringify(config, null, 4))
 	})
@@ -473,10 +475,11 @@ let imgCount = imgSettings[config.imageCount].count
 	document.querySelector('#offsetInput').addEventListener('change', (e) => {
 		// Update variable and save to config file
 		offset = e.target.value
+		if(offset < 1) offset = 999999
 		config.offset = e.target.value
 		fs.writeFileSync(configPath, JSON.stringify(config, null, 4))
 	})
-	// Change when rated checkbox - If enabled, 
+	// Change when rated checkbox - If enabled, rating an image also changes it
 	document.querySelector('#changeWhenRatedCheckbox').addEventListener('change', (e) => {
 		// Update variable and save to config file
 		changeWhenRated = e.target.checked
