@@ -230,6 +230,12 @@ app.on('window-all-closed', () => {
 		fileName = pathParts[pathParts.length - 1]
 		fs.rename(path, movePath + "\\" + fileName, (err) => {if(err) throw err})
 	})
+	// Delete file
+	ipcMain.on('delete-file', (e, path) => {
+		let pathParts = path.split('/')
+		fileName = pathParts[pathParts.length - 1]
+		fs.unlinkSync(path)
+	})
 	// Return paths and configs to the renderer when requested
 	ipcMain.on('get-config', (e) => { 
 		e.returnValue = appdataPath

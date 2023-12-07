@@ -211,6 +211,17 @@ let imgCount = imgSettings[config.imageCount].count
 		imgWindow.onblur = function() { this.close(); };
 	}
 
+	// Move image function
+	function move(element){
+		let image = decodeImg(element.src)
+		// TODO: Account for image arrays here
+		// Change image
+		let id = parseInt(element.id.substring(element.id.length - 1, element.id.length))
+		changeImg(element, id, 'click')
+		// The file has to be moved through the main process (I think)
+		ipcRenderer.send('move-file', image)
+	}
+
 	// Rate an image 1 to 5 function
 	function rateImg(element, rating){
 		let image = decodeImg(element.src)
@@ -342,15 +353,7 @@ let imgCount = imgSettings[config.imageCount].count
 		}
 		// Move file to the configured folder
 		else if(command == 'move-file'){
-			let image = decodeImg(element.src)
-			// Remove from low rated images list
-			// TODO: Also account for other image arrays here
-			lowRatedImages.splice(lowRatedImages.indexOf(image), 1)
-			// Change image
-			let id = parseInt(element.id.substring(element.id.length - 1, element.id.length))
-			changeImg(element, id, 'click')
-			// The file has to be moved through the main process (I think)
-			ipcRenderer.send('move-file', image)
+			move(element)
 		}
 
 	})
@@ -368,6 +371,9 @@ let imgCount = imgSettings[config.imageCount].count
 			if(element !== undefined && element.src !== undefined) rateImg(element, e.key)
 		}else if(e.key == 'r'){
 			ipcRenderer.send('reload')
+		}else if(e.key == 'm'){
+			let element = document.elementFromPoint(mousePosition.x, mousePosition.y)
+			if(element !== undefined && element.src !== undefined) move(element)
 		}else if(e.key == 'Control'){
 			ipcRenderer.send('dev-tools')
 		}
@@ -434,10 +440,12 @@ let imgCount = imgSettings[config.imageCount].count
 		savedGrids.push(grid)
 	})
 	// Move all low rated button - Moves lowly rated images to the configured target folder
-	document.querySelector('#moveButton').addEventListener('click', () => {
+	document.querySelector('#deleteButton').addEventListener('click', () => {
 		for(i = 0; i < lowRatedImages.length; i++){
-			let img = decodeImg(lowRatedImages[i])
-			ipcRenderer.send('move-file', img)
+			if(lowRatedImages[i] != fallbackImage){
+				let img = decodeImg(lowRatedImages[i])
+				ipcRenderer.send('delete-file', img)
+			}
 		}
 		lowRatedImages = []
 	})
