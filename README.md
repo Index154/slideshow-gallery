@@ -6,13 +6,24 @@ An image slideshow gallery with the ability to rate images for sorting purposes
 ## Basic functionality
 I made this app for the main purpose of cycling through large amounts of images so I could get some inspiration, rate the images and then get rid of the ones I've rated lowly.
 
-## Flaws and missing features
-- The UI looks bad
-- The app always starts maximized and it does not remember its last position / size after you close it
-- If a previously added folder is missing it currently simply won't be scanned for files anymore but will remain in the config as is
-- When the active folders are changed the main window has to be reloaded for the available images to change accordingly
-- The number of images visible in the grid is not freely configurable and it requires a reload after every change
-- Images change very abrubtly as there is no fading animation
+## Planned changes and additions
+- Removal of image ratings when they are deleted
+- Restoring the most recent images after reloading the grid
+- Always pausing all images on reload
+- Always remembering the previous image for each grid slot + right click "revert" option to go back one image
+- Folder state presets + save and load buttons for it
+- A setting for autosaving config values or manually saving + manual save button
+- Sync config values across all processes
+- Permanent saved image grids + ways to manage them
+- Full freedom in image count selection + automatic scaling to the window size
+- Automatic reload of main window after closing folders menu
+- No longer always starting maximized
+- Remember window size
+- Confirmation prompt for the delete button
+- Notification for missing folders
+- Better looking UI
+- The app always starts maximized
+- Re-write of this documentation
 
 # Detailed functionality
 ## Files
