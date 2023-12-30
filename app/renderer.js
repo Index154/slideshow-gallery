@@ -10,7 +10,6 @@ let ratingsPath = path.join(appdataPath, 'ratings.json')
 let configPath = path.join(appdataPath, 'config.json')
 let config = JSON.parse(fs.readFileSync(configPath, 'utf8'))
 let latestSavedGrid = []
-//config.latestGrid = []
 let mousePosition = {x: 0, y: 0}
 
 // Image count and size
@@ -55,25 +54,51 @@ let imgCount = imgSettings[config.imageCount].count
 	if(images.length < 1) images.push(fallbackImage)
 
 	// Get image ratings
-	let ratings = JSON.parse(fs.readFileSync(ratingsPath, 'utf8'))
+	let ratingsRaw = fs.readFileSync(ratingsPath, 'utf8')
+	let ratings = JSON.parse(ratingsRaw)
+	let ratingsCopy = JSON.parse(ratingsRaw)
 
 	// Prepare different image arrays for the various pool settings
 	let unratedImages = []
+	let highRatedImageObjects = []
 	let highRatedImages = []
 	let highestRatedImages = []
 	let lowRatedImages = []
 	let savedGrids = []
+	let newImages = []
+	let increment = 1
+	for(obj in ratingsCopy){
+		ratingsCopy[obj].index = increment
+		increment++
+	}
 	for(i = 0; i < images.length; i++){
 		let tempImg = images[i].replace(/\\/g, '/')	// Account for formatting differences
-		if(!(tempImg in ratings)){
+		if(!(tempImg in ratingsCopy)){
 			unratedImages.push(tempImg)
-		}else if(parseInt(ratings[tempImg].rating) <= 2){
-			lowRatedImages.push(tempImg)
 		}else{
-			if(parseInt(ratings[tempImg].rating) > 3) highRatedImages.push(tempImg)
-			if(parseInt(ratings[tempImg].rating) > 4) highestRatedImages.push(tempImg)
+			if(parseInt(ratingsCopy[tempImg].rating) <= 2){
+				lowRatedImages.push(tempImg)
+			}else{
+				if(parseInt(ratingsCopy[tempImg].rating) > 3) {
+					highRatedImages.push(tempImg)
+					highRatedImageObjects.push(ratingsCopy[tempImg])
+					highRatedImageObjects[highRatedImageObjects.length - 1].link = tempImg
+				}
+				if(parseInt(ratingsCopy[tempImg].rating) > 4) highestRatedImages.push(tempImg)
+			}
 		}
 	}
+	// Prepare newest high rated images
+	highRatedImageObjects.sort(function(a, b) {
+		let indexA = a.index
+		let indexB = b.index
+		return (indexA < indexB) ? -1 : (indexA > indexB) ? 1 : 0;
+	});
+	highRatedImageObjects.splice(0, highRatedImageObjects.length - 300)
+	for(i = 0; i < highRatedImageObjects.length; i++){
+		newImages.push(highRatedImageObjects[i].link)
+	}
+
 	findFiles()
 	document.querySelector('#unratedCounter').innerHTML = unratedImages.length
 
@@ -81,10 +106,16 @@ let imgCount = imgSettings[config.imageCount].count
 // --------------------------------------------------------------------------------------------------------------
 	// Prepare starting images
 	let startingImages = [];
+	let rememberImages = true
 	for(i = 0; i < imgCount; i++){
 		latestSavedGrid.push(0)	// Set the state of each image for the saved grids cycle later
 		let img = getRandImg(i)
-		startingImages[i] = '<img id="img' + i + '" src="' + img + '" width="' + imgDim + '" height="' + imgDim + '" style="border-style: solid; border-width: 3px; border-color: white"></img>'
+		let alt = ''
+		if(rememberImages && config.latestGrid[i] != undefined){
+			img = config.latestGrid[i].src
+			alt = ' alt="' + config.latestGrid[i].alt + '"'
+		}
+		startingImages[i] = '<img id="img' + i + '" src="' + img + '" width="' + imgDim + '" height="' + imgDim + '" style="border-style: solid; border-width: 3px; border-color: white"' + alt + '></img>'
 	}
 
 	// Insert starting images into HTML, within the imgDisplay element
@@ -95,12 +126,19 @@ let imgCount = imgSettings[config.imageCount].count
 
 	// Start timeouts for image cycling
 	for(i = 0; i < imgCount; i++){
+		// Start with all images paused
+		let element = document.getElementById('img' + i)
+		// Pause images that were previously paused
+		if(rememberImages && config.latestGrid[i].state == 'pausedTimer'){
+			pauseImg(element)
+		}
+
 		// The first timeout only accounts for the offset so it can be tested immediately
 		let thisDelay = (offset * i) * 1000;
 		let timer = setTimeout(function doThing(i) {
 			// Get and change image
 			let element = document.querySelector('#img' + i)
-			changeImg(element, i, 'cycle')
+			changeImg(element, i, 'cycle', false)
 			// Update timer delay with the global variable
 			thisDelay = delay * 1000;
 			// Function calls itself again with the new delay
@@ -146,6 +184,9 @@ let imgCount = imgSettings[config.imageCount].count
 					latestSavedGrid[id] = nextGrid
 					return newSrc
 				}
+			case 'newest':
+				tempImages = newImages
+				break
 			// Random (default setting / fallback)
 			default:
 				tempImages = images
@@ -156,17 +197,19 @@ let imgCount = imgSettings[config.imageCount].count
 	}
 
 	// Image changing function
-	function changeImg(element, id, source){
+	function changeImg(element, id, source, revertFlag){
 		// Prevent changing the image if it is paused, unless the function was called with the click argument
 		if(element.class != 'pausedTimer' || source == 'click'){
 			let fadeDelay = 250
 			let classList = element.classList
+			let newImg
+			if(!revertFlag) newImg = getRandImg(parseInt(id))
+				else newImg = element.alt
+			element.alt = element.src
 			classList.add('faded')
 			
 			let timer = setTimeout(() => {
-				let newImg = getRandImg(parseInt(id))
 				element.src = newImg
-				//config.latestGrid[id] = newImg
 				classList.remove('faded')
 			}, fadeDelay)
 		}
@@ -219,7 +262,7 @@ let imgCount = imgSettings[config.imageCount].count
 		// TODO: Account for image arrays here
 		// Change image
 		let id = parseInt(element.id.substring(element.id.length - 1, element.id.length))
-		changeImg(element, id, 'click')
+		changeImg(element, id, 'click', false)
 		// The file has to be moved through the main process (I think)
 		ipcRenderer.send('move-file', image)
 	}
@@ -233,13 +276,28 @@ let imgCount = imgSettings[config.imageCount].count
 		}
 		// Save ratings to user appdata
 		fs.writeFileSync(ratingsPath, JSON.stringify(ratings, null, 4))
-		// Update unrated images
+
+		// Update image arrays
 		unratedImages.splice(unratedImages.indexOf(image), 1)
+		if(rating < 3){
+			lowRatedImages.push(image)
+		} else if(rating > 3){
+			// Remove oldest image from the newImages array and add this one
+			newImages.splice(0, 1)
+			newImages.push(image)
+			highRatedImages.push(image)
+			if(rating > 4){
+				highestRatedImages.push(image)
+			}
+		}
+		
+		// Update unrated images counter
 		document.querySelector('#unratedCounter').innerHTML = unratedImages.length
+
 		// Change image if the relevant setting is enabled
 		if(changeWhenRated) {
 			let id = parseInt(element.id.substring(element.id.length - 1, element.id.length))
-			changeImg(element, id, 'click')
+			changeImg(element, id, 'click', false)
 		}
 	}
 
@@ -301,6 +359,19 @@ let imgCount = imgSettings[config.imageCount].count
 		fs.writeFileSync(ratingsPath, JSON.stringify(ratings, null, 4))
 	}
 
+	// Reload window
+	function reload(){
+		ipcRenderer.send('reload')
+	}
+
+	// Save config
+	function saveConfig(profile){
+		ipcRenderer.send('sync-config', config)
+		let savePath = configPath
+		if(profile != '') savePath = path.join(appdataPath, 'config-profiles', profile + '.json')
+		fs.writeFileSync(savePath, JSON.stringify(config, null, 4))
+	}
+
 // Misc event listeners
 // --------------------------------------------------------------------------------------------------------------
 	// Right click / context menu event listener
@@ -348,16 +419,35 @@ let imgCount = imgSettings[config.imageCount].count
 		else if(command == 'zoom'){
 			zoom(element)
 		}
+		// Revert to previous image
+		else if(command == 'revert'){
+			let id = parseInt(element.id.substring(element.id.length - 1, element.id.length))
+			changeImg(element, id, 'click', true)
+		}
 		// Change image
 		else if(command == 'change-image'){
 			let id = parseInt(element.id.substring(element.id.length - 1, element.id.length))
-			changeImg(element, id, 'click')
+			changeImg(element, id, 'click', false)
 		}
 		// Move file to the configured folder
 		else if(command == 'move-file'){
 			move(element)
 		}
 
+	})
+
+	// Receive config changes from main when it is synchronized across windows
+	ipcRenderer.on('sync-config', (e, receivedConfig) => {
+		let changedConfig = false
+		if(config.sourcePaths != receivedConfig.sourcePaths || config.movePath != receivedConfig.movePath || config.toggleSubFolders != receivedConfig.toggleSubFolders) changedConfig = true
+		if(changedConfig){
+			config = receivedConfig
+		}
+	})
+
+	// Reload when the config window is closed
+	ipcRenderer.on('config-closed', (e) => {
+		reload()
 	})
 
 	// Mouse movement event listener for updating the cursor position
@@ -368,13 +458,29 @@ let imgCount = imgSettings[config.imageCount].count
 
 	// Keyboard shortcut listener
 	window.addEventListener('keyup', (e) => {
+		let element = document.elementFromPoint(mousePosition.x, mousePosition.y)
+
 		if(e.key == '5' || e.key == '4' || e.key == '3' || e.key == '2' || e.key == '1'){
-			let element = document.elementFromPoint(mousePosition.x, mousePosition.y)
 			if(element !== undefined && element.src !== undefined) rateImg(element, e.key)
+		}else if(e.key == 'u'){
+			if(element !== undefined && element.src !== undefined) {
+				let id = parseInt(element.id.substring(element.id.length - 1, element.id.length))
+				changeImg(element, id, 'click', true)
+			}
 		}else if(e.key == 'r'){
-			ipcRenderer.send('reload')
+			reload()
+		}else if(e.key == 'z'){
+			if(element !== undefined && element.src !== undefined) zoom(element)
+		}else if(e.key == 'c'){
+			if(element !== undefined && element.src !== undefined){
+				let id = parseInt(element.id.substring(element.id.length - 1, element.id.length))
+				changeImg(element, id, 'click', false)
+			}
+		}else if(e.key == 'p'){
+			if(element !== undefined && element.src !== undefined) pauseImg(element)
+		}else if(e.key == 'o'){
+			if(element !== undefined && element.src !== undefined) ipcRenderer.send('open-folder', element.src)
 		}else if(e.key == 'm'){
-			let element = document.elementFromPoint(mousePosition.x, mousePosition.y)
 			if(element !== undefined && element.src !== undefined) move(element)
 		}else if(e.key == 'Control'){
 			ipcRenderer.send('dev-tools')
@@ -390,13 +496,24 @@ let imgCount = imgSettings[config.imageCount].count
 				pauseImg(e.target)
 			} else
 			if(clickAction == 'change') {
-				changeImg(e.target, i, 'click')
+				changeImg(e.target, i, 'click', false)
 			} else
 			if(clickAction == 'zoom') {
 				zoom(e.target)
 			}
 		})
 	}
+
+	// Save config on unload / close
+	window.addEventListener('beforeunload', (e) => {
+		// Get current grid images
+		imageElements = document.querySelectorAll('img')
+		for(x = 0; x < imageElements.length; x++){
+			config.latestGrid[x] = {src: imageElements[x].src, alt: imageElements[x].alt, state: imageElements[x].class}
+		}
+		// Save config
+		saveConfig('')
+	})
 
 // Button, input and selector event listeners
 // --------------------------------------------------------------------------------------------------------------
@@ -418,12 +535,12 @@ let imgCount = imgSettings[config.imageCount].count
 	document.querySelector('#changeButton').addEventListener('click', () => {
 		for(i = 0; i < imgCount; i++){
 			let img = document.querySelector('#img' + i)
-			changeImg(img, i, 'click')
+			changeImg(img, i, 'click', false)
 		}
 	})
 	// Reload button - Reloads window
 	document.querySelector('#reloadButton').addEventListener('click', () => {
-		ipcRenderer.send('reload')
+		reload()
 	})
 	// Settings button - Opens config window
 	document.querySelector('#configButton').addEventListener('click', () => {
@@ -442,11 +559,11 @@ let imgCount = imgSettings[config.imageCount].count
 		savedGrids.push(grid)
 	})
 	// Move all low rated button - Moves lowly rated images to the configured target folder
-	document.querySelector('#deleteButton').addEventListener('click', () => {
+	document.querySelector('#moveButton').addEventListener('click', () => {
 		for(i = 0; i < lowRatedImages.length; i++){
 			if(lowRatedImages[i] != fallbackImage){
 				let img = decodeImg(lowRatedImages[i])
-				ipcRenderer.send('delete-file', img)
+				ipcRenderer.send('move-file', img)
 			}
 		}
 		lowRatedImages = []
@@ -456,22 +573,20 @@ let imgCount = imgSettings[config.imageCount].count
 		// Update variable and save to config file
 		imagePool = e.target.value
 		config.imagePool = e.target.value
-		fs.writeFileSync(configPath, JSON.stringify(config, null, 4))
+		reload()
 	})
 	// Image count selector - Controls the number of images in the window (only applied on reload)
 	document.querySelector('#imageCountSelector').addEventListener('change', (e) => {
 		// Update variable and save to config file
 		imageCount = e.target.value
 		config.imageCount = e.target.value
-		fs.writeFileSync(configPath, JSON.stringify(config, null, 4))
-		ipcRenderer.send('reload')
+		reload()
 	})
 	// Left click action selector - Controls what action is performed when an image is clicked on
 	document.querySelector('#clickActionSelector').addEventListener('change', (e) => {
 		// Update variable and save to config file
 		clickAction = e.target.value
 		config.clickAction = e.target.value
-		fs.writeFileSync(configPath, JSON.stringify(config, null, 4))
 	})
 	// Delay input field - Sets the interval for images being cycled in seconds
 	document.querySelector('#delayInput').addEventListener('change', (e) => {
@@ -479,7 +594,6 @@ let imgCount = imgSettings[config.imageCount].count
 		delay = e.target.value
 		if(delay < 1) delay = 999999
 		config.delay = e.target.value
-		fs.writeFileSync(configPath, JSON.stringify(config, null, 4))
 	})
 	// Offset input field - Sets the difference in seconds between the individual images in the grid cycling
 	document.querySelector('#offsetInput').addEventListener('change', (e) => {
@@ -487,12 +601,10 @@ let imgCount = imgSettings[config.imageCount].count
 		offset = e.target.value
 		if(offset < 1) offset = 999999
 		config.offset = e.target.value
-		fs.writeFileSync(configPath, JSON.stringify(config, null, 4))
 	})
 	// Change when rated checkbox - If enabled, rating an image also changes it
 	document.querySelector('#changeWhenRatedCheckbox').addEventListener('change', (e) => {
 		// Update variable and save to config file
 		changeWhenRated = e.target.checked
 		config.changeWhenRated = e.target.checked
-		fs.writeFileSync(configPath, JSON.stringify(config, null, 4))
 	})

@@ -31,6 +31,7 @@
 				<option value="highRating">High rating</option>
 				<option value="highestRating">Highest rating</option>
 				<option value="lowRating">Low rating</option>
+				<option value="newest">New high rating</option>
 				<option value="savedGrids">Saved grids</option>
 			</select>
 			<label>On left click: </label> <select name="clickAction" id="clickActionSelector">
@@ -43,7 +44,7 @@
 			<label>Change after rating?<input type="checkbox" id="changeWhenRatedCheckbox" name="changeWhenRated" value="changeWhenRated"></label>
 			<br>
 			<label>Unrated count = </label><label id="unratedCounter"></label>
-			<button type="button" id="deleteButton">Delete all low rated</button>
+			<button type="button" id="moveButton">Move all low rated</button>
 		</div>
 		
 		<!-- This will be filled with image elements automatically -->

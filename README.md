@@ -7,22 +7,21 @@ An image slideshow gallery with the ability to rate images for sorting purposes
 I made this app for the main purpose of cycling through large amounts of images so I could get some inspiration, rate the images and then get rid of the ones I've rated lowly.
 
 ## Planned changes and additions
-- Removal of image ratings when they are deleted
-- Restoring the most recent images after reloading the grid
-- Always pausing all images on reload
-- Always remembering the previous image for each grid slot + right click "revert" option to go back one image
-- Folder state presets + save and load buttons for it
-- A setting for autosaving config values or manually saving + manual save button
-- Sync config values across all processes
-- Permanent saved image grids + ways to manage them
+### Important
+- Popup when missing images are detected
+- Removal of image ratings for images that no longer exist
+- Folder state profiles
+- Config profiles + option for turning off config autosaving
+- Custom image pools (image tagging?)
+- Prevent missing images from being loaded from latestGrid
+
+### Minor
+- Configurable hotkeys
+- Config for whether the grid should be the same after reloading (rememberImages flag)
 - Full freedom in image count selection + automatic scaling to the window size
-- Automatic reload of main window after closing folders menu
-- No longer always starting maximized
-- Remember window size
-- Confirmation prompt for the delete button
+- No longer always starting maximized. Remember window size / state instead
 - Notification for missing folders
 - Better looking UI
-- The app always starts maximized
 - Re-write of this documentation
 
 # Detailed functionality
@@ -53,7 +52,8 @@ Here is an example config:
                 }
             ]
         }
-    ]
+    ],
+    "latestGrid": []
 }
 ```
 ### ratings.json

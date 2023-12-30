@@ -31,6 +31,12 @@ window.addEventListener('keyup', (e) => {
     }
 }, true)
 
+// Before closing, sync config
+window.addEventListener('beforeunload', (e) => {
+    fs.writeFileSync(configPath, JSON.stringify(config, null, 4))
+    ipcRenderer.send('sync-config', config)
+})
+
 // Display current move target folder
 let moveTarget = document.querySelector('#moveTarget')
 moveTarget.innerText = "Current: " + config.movePath
@@ -53,31 +59,27 @@ document.querySelector('#pickMoveFolderButton').addEventListener('click', (e) =>
 document.querySelector('#enableAllButton').addEventListener('click', (e) => {
     let checkBoxes = document.querySelectorAll('input[type=checkbox]')
     checkBoxes.forEach(element => {
-        element.checked = true
+        if(element.id != "toggleSubCheckbox") element.checked = true
     });
     changeAllStates(config.sourcePaths, true)
-    fs.writeFileSync(configPath, JSON.stringify(config, null, 4))
 })
 // Disable all button listener
 document.querySelector('#disableAllButton').addEventListener('click', (e) => {
     let checkBoxes = document.querySelectorAll('input[type=checkbox]')
     checkBoxes.forEach(element => {
-        element.checked = false
+        if(element.id != "toggleSubCheckbox") element.checked = false
     });
     changeAllStates(config.sourcePaths, false)
-    fs.writeFileSync(configPath, JSON.stringify(config, null, 4))
 })
 // Toggle subfolders checkbox - If enabled, toggling a folder checkbox will also affect all its subfolders
 document.querySelector('#toggleSubCheckbox').addEventListener('change', (e) => {
     if(e.target.checked) config.toggleSubFolders = true
     else{config.toggleSubFolders = false}
-    fs.writeFileSync(configPath, JSON.stringify(config, null, 4))
 })
 
 // Change all folder states function
 function changeAllStates(array, newState) {
     array.forEach(function(folder){
-        console.log(folder)
         folder.state = newState
         changeAllStates(folder.folders, newState)
     }, array, newState)
@@ -103,8 +105,6 @@ function folderDialog(folderType, includeSubfolders){
             config.movePath = pickedPath[0]
             moveTarget.innerText = "Current: " + config.movePath
         }
-        fs.writeFileSync(configPath, JSON.stringify(config, null, 4))
-        ipcRenderer.send('reload')
     }
 }
 
@@ -129,7 +129,6 @@ function insertPath(folder, array){
         // Toggle subfolders if enabled
         if(config.toggleSubFolders) changeAllStates(array[array.indexOf(folder)].folders, newState)
 
-        fs.writeFileSync(configPath, JSON.stringify(config, null, 4))
         if(config.toggleSubFolders) ipcRenderer.send('reload')
     })
 
@@ -137,7 +136,6 @@ function insertPath(folder, array){
     let deleteButton = document.querySelector('#deletePath-' + folderId)
     deleteButton.addEventListener('click', (e) => {
         array.splice(array.indexOf(folder), 1)
-        fs.writeFileSync(configPath, JSON.stringify(config, null, 4))
         ipcRenderer.send('reload')
     })
 }

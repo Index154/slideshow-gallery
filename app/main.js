@@ -3,11 +3,13 @@ const { app, BrowserWindow, ipcMain, Menu, shell, dialog } = require('electron')
 const path = require('node:path')
 const fs = require('fs')
 const { decode } = require('html-entities')
+let mainWin
 
 // Prevent the app from launching during a squirrel startup
 if (require('electron-squirrel-startup')) app.quit()
 
 // Handle installation, uninstallation and first run events for the packaged application setup
+// npm run make => Make setup exe
 if (handleSquirrelEvent()) {
 	// Do not launch the app
 	return;
@@ -44,7 +46,9 @@ function handleSquirrelEvent() {
 	switch (squirrelEvent) {
 		case '--squirrel-firstrun':
 			// Open config window
-			createWindow(600, 850, 0, 'config.html', false, false)
+			app.whenReady().then(() => {
+				createWindow(600, 850, 0, 'config.html', false, false)
+			})
 			return false
 
 		case '--squirrel-install':
@@ -136,7 +140,7 @@ const createWindow = (width, height, posX, htmlFile, maximize, alwaysOnTop) => {
 
 // Create the main window when ready
 app.whenReady().then(() => {
-	const mainWin = createWindow(1800, 1000, config.windowPosition[0], 'index.html', true, false)
+	mainWin = createWindow(1800, 1000, config.windowPosition[0], 'index.html', true, false)
 	mainWin.on("close", () => {
 		config = JSON.parse(fs.readFileSync(configPath, 'utf8'))
 		config.windowPosition = mainWin.getPosition()
@@ -175,24 +179,29 @@ app.on('window-all-closed', () => {
 		const template = [
 			{
 				// Pause or unpause image
-				label: 'Paused',
+				label: 'Pause / resume (p)',
 				type: 'checkbox',
 				checked: pausedBox,
 				click: () => { e.sender.send('context-menu-command', 'pause-resume', rightClickPosition) }
 			},
 			{
 				// Open image in new window
-				label: 'Zoom',
+				label: 'Zoom (z)',
 				click: () => { e.sender.send('context-menu-command', 'zoom', rightClickPosition) }
 			},
 			{
+				// Revert to previous image
+				label: 'Revert (u)',
+				click: () => { e.sender.send('context-menu-command', 'revert', rightClickPosition)}
+			},
+			{
 				// Open image in new window
-				label: 'Change',
+				label: 'Change (c)',
 				click: () => { e.sender.send('context-menu-command', 'change-image', rightClickPosition) }
 			},
 			{
 				// Show image in folder view
-				label: 'Open in folder',
+				label: 'Open in folder (o)',
 				click: () => { e.sender.send('context-menu-command', 'open-path', rightClickPosition) }
 			},
 			{
@@ -209,7 +218,7 @@ app.on('window-all-closed', () => {
 			{label: 'Rate 1', type: 'checkbox', checked: checkBoxes[1], click: () => { e.sender.send('context-menu-command', 'rate-1', rightClickPosition) }},
 			// Move file to configured folder
 			{
-				label: 'Move file',
+				label: 'Move file (m)',
 				click: () => { e.sender.send('context-menu-command', 'move-file', rightClickPosition) }
 			}
 		]
@@ -246,9 +255,15 @@ app.on('window-all-closed', () => {
 			'config': config
 		}*/
 	})
+	// Synchronize config here and to main renderer if necessary
+	ipcMain.on('sync-config', (e, receivedConfig) => {
+		config = receivedConfig
+		if(e.sender != mainWin.webContents) mainWin.webContents.send('sync-config', receivedConfig)
+	})
 	// Reload window
 	ipcMain.on('reload', (e) => {
 		//config = JSON.parse(fs.readFileSync(configPath, 'utf8'))
+		e.sender.send('')
 		BrowserWindow.fromWebContents(e.sender).reload()
 	})
 	// Open dev tools
@@ -267,5 +282,11 @@ app.on('window-all-closed', () => {
 	})
 	// Open window
 	ipcMain.on('open-window', (e, width, height, posX, html, max, alwaysOnTop) => {
-		createWindow(width, height, parseInt(posX), html, max, alwaysOnTop)
+		let newWin = createWindow(width, height, parseInt(posX), html, max, alwaysOnTop)
+		// Make main renderer reload when a config window is closed
+		if(html == 'config.html'){
+			newWin.on("close", () => {
+				mainWin.webContents.send('config-closed')
+			})
+		}
 	})
