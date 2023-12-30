@@ -14,6 +14,7 @@ I made this app for the main purpose of cycling through large amounts of images 
 - Config profiles + option for turning off config autosaving
 - Custom image pools (image tagging?)
 - Prevent missing images from being loaded from latestGrid
+- Prevent duplicate images in the grid
 
 ### Minor
 - Configurable hotkeys
@@ -37,6 +38,7 @@ Here is an example config:
     "delay": "8",
     "offset": "0",
     "changeWhenRated": true,
+    "rememberImages": true,
     "clickAction": "zoom",
     "imageCount": "eight",
     "movePath": "D:\\Images\\Bad images",

@@ -9,7 +9,6 @@ let fallbackImage = path.join('..', 'images', 'no-images.png')
 let ratingsPath = path.join(appdataPath, 'ratings.json')
 let configPath = path.join(appdataPath, 'config.json')
 let config = JSON.parse(fs.readFileSync(configPath, 'utf8'))
-let latestSavedGrid = []
 let mousePosition = {x: 0, y: 0}
 
 // Image count and size
@@ -64,7 +63,6 @@ let imgCount = imgSettings[config.imageCount].count
 	let highRatedImages = []
 	let highestRatedImages = []
 	let lowRatedImages = []
-	let savedGrids = []
 	let newImages = []
 	let increment = 1
 	for(obj in ratingsCopy){
@@ -108,7 +106,6 @@ let imgCount = imgSettings[config.imageCount].count
 	let startingImages = [];
 	let rememberImages = true
 	for(i = 0; i < imgCount; i++){
-		latestSavedGrid.push(0)	// Set the state of each image for the saved grids cycle later
 		let img = getRandImg(i)
 		let alt = ''
 		if(rememberImages && config.latestGrid[i] != undefined){
@@ -174,22 +171,17 @@ let imgCount = imgSettings[config.imageCount].count
 			case 'lowRating':
 				tempImages = lowRatedImages
 				break
-			// Saved grids of current session (only if there are 2 or more - otherwise jump to default case)
-			case 'savedGrids':
-				if(savedGrids.length > 1){
-					// savedGrids is an array of arrays of image paths (one image for each grid slot)
-					let newSrc = savedGrids[latestSavedGrid[id]][id]
-					let nextGrid = latestSavedGrid[id] + 1
-					if(nextGrid > savedGrids.length - 1) nextGrid = 0
-					latestSavedGrid[id] = nextGrid
-					return newSrc
-				}
 			case 'newest':
 				tempImages = newImages
 				break
-			// Random (default setting / fallback)
+			// Random
+			case 'random':
+				tempImages = images
+				break
+			// Default: Try to load a custom image pool profile
 			default:
 				tempImages = images
+
 		}
 		// Add the fallback image if the array is empty
 		if(tempImages.length < 1){tempImages.push(fallbackImage)}
@@ -547,16 +539,6 @@ let imgCount = imgSettings[config.imageCount].count
 		// Open new window
 		let posX = window.screenLeft - 300 + window.outerWidth / 2
 		ipcRenderer.send('open-window', 600, 850, posX, 'config.html', false, false)
-	})
-	// Save grid button - Saves all current images to an array (for the current session only)
-	// Grids can be cycled through with the corresponding image pool setting
-	document.querySelector('#saveGridButton').addEventListener('click', () => {
-		let grid = []
-		for(i = 0; i < imgCount; i++){
-			let img = document.querySelector('#img' + i)
-			grid[i] = img.src
-		}
-		savedGrids.push(grid)
 	})
 	// Move all low rated button - Moves lowly rated images to the configured target folder
 	document.querySelector('#moveButton').addEventListener('click', () => {
