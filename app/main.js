@@ -169,7 +169,7 @@ app.whenReady().then(() => {
 // Stop the app when all windows are closed
 app.on('window-all-closed', () => {
 	// Exception for MacOS where apps generally keep running even when windows are closed
-	//if (process.platform !== 'darwin') app.quit()
+	if (process.platform !== 'darwin') app.quit()
 })
 
 // ipcMain event handlers
