@@ -32,7 +32,7 @@ window.addEventListener('keyup', (e) => {
 }, true)
 
 // Before closing, sync config
-window.addEventListener('beforeunload', (e) => {
+window.addEventListener('unload', (e) => {
     fs.writeFileSync(configPath, JSON.stringify(config, null, 4))
     ipcRenderer.send('sync-config', config)
 })
@@ -127,9 +127,10 @@ function insertPath(folder, array){
         array[array.indexOf(folder)].state = newState
 
         // Toggle subfolders if enabled
-        if(config.toggleSubFolders) changeAllStates(array[array.indexOf(folder)].folders, newState)
-
-        if(config.toggleSubFolders) ipcRenderer.send('reload')
+        if(config.toggleSubFolders) {
+            changeAllStates(array[array.indexOf(folder)].folders, newState)
+            ipcRenderer.send('reload')
+        }
     })
 
     // Event listener for the delete button

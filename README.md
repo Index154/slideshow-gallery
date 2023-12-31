@@ -12,15 +12,12 @@ I made this app for the main purpose of cycling through large amounts of images 
 - Removal of image ratings for images that no longer exist
 - Folder state profiles
 - Config profiles + option for turning off config autosaving
-- Custom image pools (image tagging?)
-- Prevent missing images from being loaded from latestGrid
-- Prevent duplicate images in the grid
 
 ### Minor
 - Configurable hotkeys
+- Reduce the chance of duplicate images in the grid
 - Config for whether the grid should be the same after reloading (rememberImages flag)
 - Full freedom in image count selection + automatic scaling to the window size
-- No longer always starting maximized. Remember window size / state instead
 - Notification for missing folders
 - Better looking UI
 - Re-write of this documentation

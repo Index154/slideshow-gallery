@@ -73,25 +73,33 @@ function handleSquirrelEvent() {
 	}
 };
 
-// Get paths
+// Make folders if needed
 let appdataPath = path.join(app.getPath('appData'), 'slideshow-gallery')
-// If the appdata folder doesn't exist, create it
 if(!fs.existsSync(appdataPath)) fs.mkdirSync(appdataPath)
-let configPath = path.join(appdataPath, 'config.json')
+let customPoolsPath = path.join(appdataPath, 'custom-pools')
+if(!fs.existsSync(customPoolsPath)) fs.mkdirSync(customPoolsPath)
+
 // Create a config file with default values if it does not exist yet
+let configPath = path.join(appdataPath, 'config.json')
 let config = {}
 if(!fs.existsSync(configPath)){
 	config = {
 		imagePool: 'random',
+		editingPool: '',
 		delay: '15',
 		offset: '5',
 		changeWhenRated: true,
+		rememberImages: true,
 		clickAction: 'pauseResume',
 		imageCount: 'eight',
-		windowPosition: [0, 0],
+		windowState: {
+			bounds: {x: -7, y: -7, width: 1550, height: 846},
+			isMaximized: true
+		},
 		toggleSubFolders: false,
+		movePath: '',
 		sourcePaths: [],
-		movePath: ''
+		latestGrid: []
 	}
 	fs.writeFileSync(configPath, JSON.stringify(config, null, 4))
 }else{
@@ -140,11 +148,15 @@ const createWindow = (width, height, posX, htmlFile, maximize, alwaysOnTop) => {
 
 // Create the main window when ready
 app.whenReady().then(() => {
-	mainWin = createWindow(1800, 1000, config.windowPosition[0], 'index.html', true, false)
+	mainWin = createWindow(config.windowState.bounds.width, config.windowState.bounds.height, config.windowState.bounds.x, 'index.html', config.windowState.isMaximized, false)
 	mainWin.on("close", () => {
 		config = JSON.parse(fs.readFileSync(configPath, 'utf8'))
-		config.windowPosition = mainWin.getPosition()
-		fs.writeFileSync(configPath, JSON.stringify(config, null, 4))
+		config.windowState.bounds = mainWin.getBounds()
+		config.windowState.isMaximized = mainWin.isMaximized()
+		// Wait a little bit before saving the config to avoid conflicts with renderer
+		let timer = setTimeout(() => {
+			fs.writeFileSync(configPath, JSON.stringify(config, null, 4))
+		}, 100)
 	})
   
 	// MacOS listener: Open new window when the app is "started" while already running
@@ -157,7 +169,7 @@ app.whenReady().then(() => {
 // Stop the app when all windows are closed
 app.on('window-all-closed', () => {
 	// Exception for MacOS where apps generally keep running even when windows are closed
-	if (process.platform !== 'darwin') app.quit()
+	//if (process.platform !== 'darwin') app.quit()
 })
 
 // ipcMain event handlers
@@ -220,6 +232,17 @@ app.on('window-all-closed', () => {
 			{
 				label: 'Move file (m)',
 				click: () => { e.sender.send('context-menu-command', 'move-file', rightClickPosition) }
+			},
+			{type: 'separator'},
+			{
+				// Add image to editing pool
+				label: 'Add to pool (e)',
+				click: () => { e.sender.send('context-menu-command', 'add-to-pool', rightClickPosition) }
+			},
+			{
+				// Remove image from editing pool
+				label: 'Remove from pool (q)',
+				click: () => { e.sender.send('context-menu-command', 'remove-from-pool', rightClickPosition) }
 			}
 		]
 		const menu = Menu.buildFromTemplate(template)

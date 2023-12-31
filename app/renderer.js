@@ -12,21 +12,25 @@ let config = JSON.parse(fs.readFileSync(configPath, 'utf8'))
 let mousePosition = {x: 0, y: 0}
 
 // Image count and size
+let infoDiv = document.querySelector('#imgDisplay')
+let menuBar = document.querySelector('#menuBar')
 let imgSettings = {
 	eighteen: {dim: 240, count: 18},
-	twelve: {dim: 260, count: 12},
+	twelve: {dim: 252, count: 12},
 	eight: {dim: 375, count: 8},
 	eightSmall: {dim: 280, count: 8},
-	one: {dim: 700, count: 1}
+	one: {dim: 750, count: 1}
 }
-let imgDim = imgSettings[config.imageCount].dim
 let imgCount = imgSettings[config.imageCount].count
+//let imgDim = Math.floor(Math.sqrt(((window.innerHeight - menuBar.offsetHeight) * (window.innerWidth - 50)) / imgCount) - 12)
+//let imgDim = Math.min((window.innerHeight - menuBar.offsetHeight) / imgCount, (window.innerWidth - 0) / imgCount);
+let imgDim = imgSettings[config.imageCount].dim
 
 // Get settings from config and update UI elements
 // --------------------------------------------------------------------------------------------------------------
 	// Selection mode / Image pool (what images should be cycled through)
-	let imagePool = config.imagePool
-	document.querySelector('#imagePoolSelector').value = imagePool
+	let imagePool = config.imagePool	// The UI value is updated later because of custom pools not being loaded yet!
+	let editingPool = config.editingPool	// The UI value is updated later because of custom pools not being loaded yet!
 	// Click mode / Left click action (what happens when you click an image)
 	let clickAction = config.clickAction
 	document.querySelector('#clickActionSelector').value = clickAction
@@ -57,6 +61,34 @@ let imgCount = imgSettings[config.imageCount].count
 	let ratings = JSON.parse(ratingsRaw)
 	let ratingsCopy = JSON.parse(ratingsRaw)
 
+	// Insert custom image pools into selectors
+	let imagePoolSelector = document.querySelector('#imagePoolSelector')
+	let editingPoolSelector = document.querySelector('#editingPoolSelector')
+	// Get custom pool files from folder
+	let customPoolList = []
+	let customPools = {}
+	let activeCustomPools = {}
+	let customPoolPath = path.join(appdataPath, 'custom-pools')
+	let customPoolFiles = fs.readdirSync(path.join(appdataPath, 'custom-pools'))
+	customPoolFiles.forEach(customPool => {
+		if(customPool.substring(customPool.length - 5, customPool.length).includes('.json')){
+			let customPoolName = customPool.replace(/\.json/, '')
+			customPools[customPoolName] = JSON.parse(fs.readFileSync(path.join(customPoolPath, customPool), 'utf8'))
+			activeCustomPools[customPoolName] = []
+			customPoolList.push(customPoolName)
+			let poolHtml = '<option value="' + customPoolName + '">' + customPoolName + '</option>'
+			imagePoolSelector.insertAdjacentHTML('beforeend', poolHtml)
+			editingPoolSelector.insertAdjacentHTML('beforeend', poolHtml)
+		}
+	})
+	// Update UI
+	document.querySelector('#imagePoolSelector').value = imagePool
+	if(editingPool != '') editingPoolSelector.value = editingPool
+	else {
+		editingPool = editingPoolSelector.value
+		config.editingPool = editingPoolSelector.value
+	}
+
 	// Prepare different image arrays for the various pool settings
 	let unratedImages = []
 	let highRatedImageObjects = []
@@ -85,6 +117,9 @@ let imgCount = imgSettings[config.imageCount].count
 				if(parseInt(ratingsCopy[tempImg].rating) > 4) highestRatedImages.push(tempImg)
 			}
 		}
+		customPoolList.forEach(pool => {
+			if(customPools[pool].includes(tempImg)) activeCustomPools[pool].push(tempImg)
+		})
 	}
 	// Prepare newest high rated images
 	highRatedImageObjects.sort(function(a, b) {
@@ -106,9 +141,9 @@ let imgCount = imgSettings[config.imageCount].count
 	let startingImages = [];
 	let rememberImages = true
 	for(i = 0; i < imgCount; i++){
-		let img = getRandImg(i)
+		let img = getRandImg()
 		let alt = ''
-		if(rememberImages && config.latestGrid[i] != undefined){
+		if(rememberImages && config.latestGrid[i] != undefined && fs.existsSync(decodeImg(config.latestGrid[i].src))){
 			img = config.latestGrid[i].src
 			alt = ' alt="' + config.latestGrid[i].alt + '"'
 		}
@@ -116,7 +151,6 @@ let imgCount = imgSettings[config.imageCount].count
 	}
 
 	// Insert starting images into HTML, within the imgDisplay element
-	let infoDiv = document.querySelector('#imgDisplay')
 	startingImages.forEach(img => {
 		infoDiv.insertAdjacentHTML('beforeend', img)
 	})
@@ -135,7 +169,7 @@ let imgCount = imgSettings[config.imageCount].count
 		let timer = setTimeout(function doThing(i) {
 			// Get and change image
 			let element = document.querySelector('#img' + i)
-			changeImg(element, i, 'cycle', false)
+			changeImg(element, 'cycle', false)
 			// Update timer delay with the global variable
 			thisDelay = delay * 1000;
 			// Function calls itself again with the new delay
@@ -151,8 +185,8 @@ let imgCount = imgSettings[config.imageCount].count
 		return ipcRenderer.sendSync('decode', path.replace(/%20/g, ' ').replace(/file:\/\/\//g, ''))
 	}
 
-	// Function for getting a random image link based on the selected pool
-	function getRandImg(id) {
+	// Pick the array corresponding to the current image pool setting
+	function getImagePool(){
 		let tempImages
 		switch(imagePool){
 			// No rating
@@ -180,22 +214,28 @@ let imgCount = imgSettings[config.imageCount].count
 				break
 			// Default: Try to load a custom image pool profile
 			default:
-				tempImages = images
-
+				tempImages = activeCustomPools[imagePool]
 		}
+		return tempImages
+	}
+
+	// Function for getting a random image link based on the selected pool
+	function getRandImg() {
+		let tempImages = getImagePool()
 		// Add the fallback image if the array is empty
 		if(tempImages.length < 1){tempImages.push(fallbackImage)}
-		return tempImages[Math.floor(Math.random()*tempImages.length)]
+		// Pick a random image
+		return tempImages[Math.floor(Math.random() * tempImages.length)]
 	}
 
 	// Image changing function
-	function changeImg(element, id, source, revertFlag){
+	function changeImg(element, source, revertFlag){
 		// Prevent changing the image if it is paused, unless the function was called with the click argument
 		if(element.class != 'pausedTimer' || source == 'click'){
 			let fadeDelay = 250
 			let classList = element.classList
 			let newImg
-			if(!revertFlag) newImg = getRandImg(parseInt(id))
+			if(!revertFlag) newImg = getRandImg()
 				else newImg = element.alt
 			element.alt = element.src
 			classList.add('faded')
@@ -254,7 +294,7 @@ let imgCount = imgSettings[config.imageCount].count
 		// TODO: Account for image arrays here
 		// Change image
 		let id = parseInt(element.id.substring(element.id.length - 1, element.id.length))
-		changeImg(element, id, 'click', false)
+		changeImg(element, 'click', false)
 		// The file has to be moved through the main process (I think)
 		ipcRenderer.send('move-file', image)
 	}
@@ -289,7 +329,7 @@ let imgCount = imgSettings[config.imageCount].count
 		// Change image if the relevant setting is enabled
 		if(changeWhenRated) {
 			let id = parseInt(element.id.substring(element.id.length - 1, element.id.length))
-			changeImg(element, id, 'click', false)
+			changeImg(element, 'click', false)
 		}
 	}
 
@@ -358,10 +398,40 @@ let imgCount = imgSettings[config.imageCount].count
 
 	// Save config
 	function saveConfig(profile){
-		ipcRenderer.send('sync-config', config)
+		//ipcRenderer.send('sync-config', config)
 		let savePath = configPath
 		if(profile != '') savePath = path.join(appdataPath, 'config-profiles', profile + '.json')
 		fs.writeFileSync(savePath, JSON.stringify(config, null, 4))
+	}
+
+	// Remove from custom pool
+	function removeFromPool(element){
+		let img = decodeImg(element.src)
+		if(editingPool != '' && customPools[editingPool].includes(img)) {
+			customPools[editingPool].splice(customPools[editingPool].indexOf(img), 1)
+			let updatePoolPath = path.join(customPoolPath, editingPool + '.json')
+			fs.writeFileSync(updatePoolPath, JSON.stringify(customPools[editingPool], null, 4))
+			changeImg(element, 'click', false)
+		}
+	}
+
+	// Add image to custom pool
+	function addToPool(element){
+		let img = decodeImg(element.src)
+		if(editingPool != '' && !customPools[editingPool].includes(img)) {
+			customPools[editingPool].push(img)
+			let updatePoolPath = path.join(customPoolPath, editingPool + '.json')
+			fs.writeFileSync(updatePoolPath, JSON.stringify(customPools[editingPool], null, 4))
+			changeImg(element, 'click', false)
+		}
+	}
+
+	// Add all visible images to custom pool
+	function addAllToPool(){
+		let images = document.querySelectorAll('img')
+		images.forEach(img => {
+			addToPool(img)
+		})
 	}
 
 // Misc event listeners
@@ -413,17 +483,21 @@ let imgCount = imgSettings[config.imageCount].count
 		}
 		// Revert to previous image
 		else if(command == 'revert'){
-			let id = parseInt(element.id.substring(element.id.length - 1, element.id.length))
-			changeImg(element, id, 'click', true)
+			changeImg(element, 'click', true)
 		}
 		// Change image
 		else if(command == 'change-image'){
-			let id = parseInt(element.id.substring(element.id.length - 1, element.id.length))
-			changeImg(element, id, 'click', false)
+			changeImg(element, 'click', false)
 		}
 		// Move file to the configured folder
 		else if(command == 'move-file'){
 			move(element)
+		}
+		else if(command == 'add-to-pool'){
+			addToPool(element)
+		}
+		else if(command == 'remove-from-pool'){
+			removeFromPool(element)
 		}
 
 	})
@@ -439,7 +513,10 @@ let imgCount = imgSettings[config.imageCount].count
 
 	// Reload when the config window is closed
 	ipcRenderer.on('config-closed', (e) => {
-		reload()
+		// Don't do it immediately, otherwise config changes won't have time to be updated
+		let timer = setTimeout(() => {
+			reload()
+		}, 100)
 	})
 
 	// Mouse movement event listener for updating the cursor position
@@ -457,7 +534,7 @@ let imgCount = imgSettings[config.imageCount].count
 		}else if(e.key == 'u'){
 			if(element !== undefined && element.src !== undefined) {
 				let id = parseInt(element.id.substring(element.id.length - 1, element.id.length))
-				changeImg(element, id, 'click', true)
+				changeImg(element, 'click', true)
 			}
 		}else if(e.key == 'r'){
 			reload()
@@ -466,10 +543,14 @@ let imgCount = imgSettings[config.imageCount].count
 		}else if(e.key == 'c'){
 			if(element !== undefined && element.src !== undefined){
 				let id = parseInt(element.id.substring(element.id.length - 1, element.id.length))
-				changeImg(element, id, 'click', false)
+				changeImg(element, 'click', false)
 			}
 		}else if(e.key == 'p'){
 			if(element !== undefined && element.src !== undefined) pauseImg(element)
+		}else if(e.key == 'q'){
+			if(element !== undefined && element.src !== undefined) removeFromPool(element)
+		}else if(e.key == 'e'){
+			if(element !== undefined && element.src !== undefined) addToPool(element)
 		}else if(e.key == 'o'){
 			if(element !== undefined && element.src !== undefined) ipcRenderer.send('open-folder', element.src)
 		}else if(e.key == 'm'){
@@ -479,7 +560,7 @@ let imgCount = imgSettings[config.imageCount].count
 		}
 	}, true)
 
-	// Left click event listener - Add to all images
+	// Left click event listener - Add it to all images
 	let imageElements = document.querySelectorAll('img')
 	for(i = 0; i < imageElements.length; i++){
 		imageElements[i].addEventListener('click', (e) => {
@@ -488,7 +569,7 @@ let imgCount = imgSettings[config.imageCount].count
 				pauseImg(e.target)
 			} else
 			if(clickAction == 'change') {
-				changeImg(e.target, i, 'click', false)
+				changeImg(e.target, 'click', false)
 			} else
 			if(clickAction == 'zoom') {
 				zoom(e.target)
@@ -501,7 +582,9 @@ let imgCount = imgSettings[config.imageCount].count
 		// Get current grid images
 		imageElements = document.querySelectorAll('img')
 		for(x = 0; x < imageElements.length; x++){
-			config.latestGrid[x] = {src: imageElements[x].src, alt: imageElements[x].alt, state: imageElements[x].class}
+			if(!imageElements[x].src.includes('images/no-images.png')){
+				config.latestGrid[x] = {src: imageElements[x].src, alt: imageElements[x].alt, state: imageElements[x].class}
+			}
 		}
 		// Save config
 		saveConfig('')
@@ -527,7 +610,7 @@ let imgCount = imgSettings[config.imageCount].count
 	document.querySelector('#changeButton').addEventListener('click', () => {
 		for(i = 0; i < imgCount; i++){
 			let img = document.querySelector('#img' + i)
-			changeImg(img, i, 'click', false)
+			changeImg(img, 'click', false)
 		}
 	})
 	// Reload button - Reloads window
@@ -538,6 +621,7 @@ let imgCount = imgSettings[config.imageCount].count
 	document.querySelector('#configButton').addEventListener('click', () => {
 		// Open new window
 		let posX = window.screenLeft - 300 + window.outerWidth / 2
+		saveConfig('')
 		ipcRenderer.send('open-window', 600, 850, posX, 'config.html', false, false)
 	})
 	// Move all low rated button - Moves lowly rated images to the configured target folder
@@ -589,4 +673,28 @@ let imgCount = imgSettings[config.imageCount].count
 		// Update variable and save to config file
 		changeWhenRated = e.target.checked
 		config.changeWhenRated = e.target.checked
+	})
+	// Add pool button - Adds the pool currently in the custom pool input field
+	document.querySelector('#addPoolButton').addEventListener('click', () => {
+		let element = document.querySelector('#customPoolInput')
+		if(element.value != ''){
+			// Add the custom pool (make file)
+			let newPoolPath = path.join(customPoolPath, element.value + '.json')
+			let newPool = []
+			if(!fs.existsSync(newPoolPath)) {
+				fs.writeFileSync(newPoolPath, JSON.stringify(newPool, null, 4))
+				let poolHtml = '<option value="' + element.value + '">' + element.value + '</option>'
+				editingPoolSelector.insertAdjacentHTML('beforeend', poolHtml)
+			}
+		}
+	})
+	// Editing pool selector - Changes the currently active editing pool (will be modified by the relevant functions)
+	document.querySelector('#editingPoolSelector').addEventListener('change', (e) => {
+		// Update variable
+		editingPool = e.target.value
+		config.editingPool = e.target.value
+	})
+	// Add all to pool button - Adds all active images to the active editing pool
+	document.querySelector('#addToPoolButton').addEventListener('click', (e) => {
+		addAllToPool()
 	})
