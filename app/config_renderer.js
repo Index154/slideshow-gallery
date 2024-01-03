@@ -1,3 +1,4 @@
+// Unsafe node access module
 const { ipcRenderer } = require('electron')
 const fs = require('fs')
 const path = require('node:path')
@@ -105,6 +106,7 @@ function folderDialog(folderType, includeSubfolders){
             config.movePath = pickedPath[0]
             moveTarget.innerText = "Current: " + config.movePath
         }
+        ipcRenderer.send('reload')
     }
 }
 

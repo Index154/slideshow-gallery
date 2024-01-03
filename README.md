@@ -4,21 +4,22 @@
 An image slideshow gallery with the ability to rate images for sorting purposes
 
 ## Basic functionality
-I made this app for the main purpose of cycling through large amounts of images so I could get some inspiration, rate the images and then get rid of the ones I've rated lowly.
+I made this app for the main purpose of rating my images and then sorting out the bad ones. It's also useful for cycling through large amounts of images to get some random inspiration.
 
 ## Planned changes and additions
 ### Important
-- Popup when missing images are detected
+- Popup when previously rated images are missing
 - Removal of image ratings for images that no longer exist
-- Folder state profiles
-- Config profiles + option for turning off config autosaving
+- Source folder profiles
+- Config profiles + option for turning off autosaves
 
 ### Minor
 - Configurable hotkeys
-- Reduce the chance of duplicate images in the grid
-- Config for whether the grid should be the same after reloading (rememberImages flag)
+- Reduced chances of duplicate images in the grid
+- Config for whether the grid images should be the same after reloading (rememberImages flag)
 - Full freedom in image count selection + automatic scaling to the window size
-- Notification for missing folders
+- One combined notification for all missing folders
+- Maybe put some "config" values into other files
 - Better looking UI
 - Re-write of this documentation
 
@@ -28,35 +29,10 @@ Installation is user-based. The app will be installed in your local appdata fold
 The app's files are stored in your appdata directory, within the subfolder slideshow-gallery (for example `C:\Users\%username%\Appdata\Roaming\slideshow-gallery` in Windows).
 ### config.json
 This file contains the app's configs. Whenever you change a setting in the GUI it will be saved to this file. When the app starts it will look for the file and load the saved configurations.
-Here is an example config:
-```json
-{
-    "imagePool": "random",
-    "delay": "8",
-    "offset": "0",
-    "changeWhenRated": true,
-    "rememberImages": true,
-    "clickAction": "zoom",
-    "imageCount": "eight",
-    "movePath": "D:\\Images\\Bad images",
-    "sourcePaths": [
-        {
-            "path": "E:",
-            "state": false,
-            "folders": [
-                {
-                    "path": "Images",
-                    "state": true,
-                    "folders": []
-                }
-            ]
-        }
-    ],
-    "latestGrid": []
-}
-```
 ### ratings.json
 An image can be rated using the right click context menu or by pressing the corresponding number key (1, 2, 3, 4 or 5) while hovering the cursor over it. Your image ratings are stored in this file. Previously rated images that can no longer be found by the app will be re-assigned their current paths if the app finds them in your currently loaded folders.
+### <custom-pool-name>.json
+Custom image pools created by you are saved in the subfolder custom-pools. These contain simple arrays of image paths.
 
 ## GUI
 Here is an example of what the application window looks like:

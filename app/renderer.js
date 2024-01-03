@@ -1,4 +1,4 @@
-// Unsafe node access module (make it go through the preload script later)
+// Unsafe node access module
 const { ipcRenderer } = require('electron')
 const fs = require('fs')
 const path = require('node:path')
@@ -13,7 +13,6 @@ let mousePosition = {x: 0, y: 0}
 
 // Image count and size
 let infoDiv = document.querySelector('#imgDisplay')
-let menuBar = document.querySelector('#menuBar')
 let imgSettings = {
 	eighteen: {dim: 240, count: 18},
 	twelve: {dim: 252, count: 12},
@@ -22,9 +21,13 @@ let imgSettings = {
 	one: {dim: 750, count: 1}
 }
 let imgCount = imgSettings[config.imageCount].count
-//let imgDim = Math.floor(Math.sqrt(((window.innerHeight - menuBar.offsetHeight) * (window.innerWidth - 50)) / imgCount) - 12)
-//let imgDim = Math.min((window.innerHeight - menuBar.offsetHeight) / imgCount, (window.innerWidth - 0) / imgCount);
 let imgDim = imgSettings[config.imageCount].dim
+
+// Some unsuccessful attempts at dynamic image sizes
+//let menuBar = document.querySelector('#menuBar')
+//imgDim = Math.floor(Math.sqrt(((window.innerHeight - menuBar.offsetHeight) * (window.innerWidth - 50)) / imgCount) - 12)
+//imgDim = Math.min((window.innerHeight - menuBar.offsetHeight) / imgCount, (window.innerWidth - 0) / imgCount);
+
 
 // Get settings from config and update UI elements
 // --------------------------------------------------------------------------------------------------------------
@@ -81,7 +84,7 @@ let imgDim = imgSettings[config.imageCount].dim
 			editingPoolSelector.insertAdjacentHTML('beforeend', poolHtml)
 		}
 	})
-	// Update UI
+	// Update UI elements that only now have all their values
 	document.querySelector('#imagePoolSelector').value = imagePool
 	if(editingPool != '') editingPoolSelector.value = editingPool
 	else {
@@ -348,23 +351,24 @@ let imgDim = imgSettings[config.imageCount].dim
 		// Get all file and folder names within
 		if(!fs.existsSync(folderPath)) {
 			let posX = window.screenLeft - 225 + window.outerWidth / 2
-			ipcRenderer.send('open-window', 450, 400, posX, 'missing-folder.html', false, false)
-		}
-		let tempImages = fs.readdirSync(folderPath)
-		for(i = 0; i < tempImages.length; i++){
-			
-			// Only keep files with specific file extensions
-			let fileEnding = tempImages[i].substring(tempImages[i].length - 5, tempImages[i].length)
-			if(fileEnding.includes('.png') || fileEnding.includes('.jpg') || fileEnding.includes('.jpeg') || fileEnding.includes('.gif') || fileEnding.includes('.webp')){
-				tempImages[i] = path.join(folderPath, tempImages[i])
-			}else{
-				tempImages.splice(i, 1)
-				i--
+			ipcRenderer.send('open-window', 450, 400, posX, 'missing-folder.html', false, true, folderPath)
+		}else{
+			let tempImages = fs.readdirSync(folderPath)
+			for(i = 0; i < tempImages.length; i++){
+				
+				// Only keep files with specific file extensions
+				let fileEnding = tempImages[i].substring(tempImages[i].length - 5, tempImages[i].length)
+				if(fileEnding.includes('.png') || fileEnding.includes('.jpg') || fileEnding.includes('.jpeg') || fileEnding.includes('.gif') || fileEnding.includes('.webp')){
+					tempImages[i] = path.join(folderPath, tempImages[i])
+				}else{
+					tempImages.splice(i, 1)
+					i--
+				}
+				
 			}
-			
+			// Add found images to the main array
+			images = images.concat(tempImages)
 		}
-		// Add found images to the main array
-		images = images.concat(tempImages)
 	}
 	// Fix missing file paths in ratings
 	function findFiles(){
@@ -622,7 +626,7 @@ let imgDim = imgSettings[config.imageCount].dim
 		// Open new window
 		let posX = window.screenLeft - 300 + window.outerWidth / 2
 		saveConfig('')
-		ipcRenderer.send('open-window', 600, 850, posX, 'config.html', false, false)
+		ipcRenderer.send('open-window', 600, 850, posX, 'config.html', false, false, '')
 	})
 	// Move all low rated button - Moves lowly rated images to the configured target folder
 	document.querySelector('#moveButton').addEventListener('click', () => {

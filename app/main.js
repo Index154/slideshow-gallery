@@ -4,6 +4,7 @@ const path = require('node:path')
 const fs = require('fs')
 const { decode } = require('html-entities')
 let mainWin
+let mainWinState = 'preparing'
 
 // Prevent the app from launching during a squirrel startup
 if (require('electron-squirrel-startup')) app.quit()
@@ -115,7 +116,7 @@ if(!fs.existsSync(ratingsPath)){
 }
 
 // Window creation function
-const createWindow = (width, height, posX, htmlFile, maximize, alwaysOnTop) => {
+const createWindow = (width, height, posX, htmlFile, maximize, alwaysOnTop, data) => {
 
 	// Window object
 	const win = new BrowserWindow({
@@ -123,6 +124,7 @@ const createWindow = (width, height, posX, htmlFile, maximize, alwaysOnTop) => {
 		height: height,
 		show: false,
 		webPreferences: {
+			// !! Do not use these values if your app connects to external resources !!
 			contextIsolation: false,
 			nodeIntegration: true
 		}
@@ -139,7 +141,11 @@ const createWindow = (width, height, posX, htmlFile, maximize, alwaysOnTop) => {
 
 	// Only show the window after it has finished loading
 	win.webContents.on("did-finish-load", () => {
-        win.show();
+		// Send extra parameters to the window if needed
+		if(data != '' && data != undefined){
+			win.webContents.send('initial-data', data)
+		}
+		win.show();
         win.focus();
     });
 
@@ -149,13 +155,16 @@ const createWindow = (width, height, posX, htmlFile, maximize, alwaysOnTop) => {
 // Create the main window when ready
 app.whenReady().then(() => {
 	mainWin = createWindow(config.windowState.bounds.width, config.windowState.bounds.height, config.windowState.bounds.x, 'index.html', config.windowState.isMaximized, false)
+	mainWinState = 'active'
 	mainWin.on("close", () => {
+		mainWinState = 'closed'
 		config = JSON.parse(fs.readFileSync(configPath, 'utf8'))
 		config.windowState.bounds = mainWin.getBounds()
 		config.windowState.isMaximized = mainWin.isMaximized()
 		// Wait a little bit before saving the config to avoid conflicts with renderer
 		let timer = setTimeout(() => {
 			fs.writeFileSync(configPath, JSON.stringify(config, null, 4))
+			app.quit()
 		}, 100)
 	})
   
@@ -281,7 +290,7 @@ app.on('window-all-closed', () => {
 	// Synchronize config here and to main renderer if necessary
 	ipcMain.on('sync-config', (e, receivedConfig) => {
 		config = receivedConfig
-		if(e.sender != mainWin.webContents) mainWin.webContents.send('sync-config', receivedConfig)
+		if(mainWinState != 'closed' && e.sender != mainWin.webContents) mainWin.webContents.send('sync-config', receivedConfig)
 	})
 	// Reload window
 	ipcMain.on('reload', (e) => {
@@ -304,12 +313,18 @@ app.on('window-all-closed', () => {
 		})
 	})
 	// Open window
-	ipcMain.on('open-window', (e, width, height, posX, html, max, alwaysOnTop) => {
-		let newWin = createWindow(width, height, parseInt(posX), html, max, alwaysOnTop)
+	ipcMain.on('open-window', (e, width, height, posX, html, max, alwaysOnTop, data) => {
+		let newWin = createWindow(width, height, parseInt(posX), html, max, alwaysOnTop, data)
 		// Make main renderer reload when a config window is closed
 		if(html == 'config.html'){
 			newWin.on("close", () => {
-				mainWin.webContents.send('config-closed')
+				if(mainWinState != 'closed'){
+					mainWin.webContents.send('config-closed')
+				}
 			})
 		}
+	})
+	// Close window
+	ipcMain.on('close-window', (e) => {
+		BrowserWindow.fromWebContents(e.sender).webContents.close()
 	})
