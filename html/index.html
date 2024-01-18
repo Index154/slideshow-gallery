@@ -20,8 +20,10 @@
 				<option value="eightSmall">8 (small)</option>
 				<option value="one">1</option>
 			</select>
-			<label>Delay: </label> <input type="text" id="delayInput" name="delay" style="width: 30px" value="6">
-			<label>Offset: </label> <input type="text" id="offsetInput" name="offset" style="width: 30px" value="0" class="menu-margin">
+			<div class="tooltip"><label>Delay: </label> <input type="text" id="delayInput" name="delay" style="width: 30px" value="6">
+				<span class="tooltiptext">The time in seconds after which any given image should change</span></div>
+			<div class="tooltip"><label>Offset: </label> <input type="text" id="offsetInput" name="offset" style="width: 30px" value="0" class="menu-margin">
+				<span class="tooltiptext">The time in seconds between the various images in the grid changing, offsetting their cycles</span></div>
 			<button type="button" id="pauseButton">Pause all</button>
 			<button type="button" id="continueButton">Resume all</button>
 			<button type="button" id="changeButton" class="menu-margin">Change all</button>

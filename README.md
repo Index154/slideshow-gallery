@@ -1,17 +1,20 @@
 ![image](https://github.com/Index154/slideshow-gallery/assets/105119758/db8094fe-35ae-4389-99ea-ffdb959b8a29)
 
 # Introduction
-An image slideshow gallery with the ability to rate images for sorting purposes
+An image slideshow gallery with the ability to rate images for sorting purposes.
+Warning: This documentation is slightly outdated.
 
 ## Basic functionality
 I made this app for the main purpose of rating my images and then sorting out the bad ones. It's also useful for cycling through large amounts of images to get some random inspiration.
 
 ## Planned changes and additions
 ### Important
-- Popup when previously rated images are missing
-- Removal of image ratings for images that no longer exist
-- Source folder profiles
-- Config profiles + option for turning off autosaves
+- More control over custom image pools
+- Popup when previously rated images are missing. Right now it automatically changes the path of a rating if an images of the same name is found in a different folder source. This should be avoided
+- Button for cleaning up the ratings file, removing ratings for files that no longer exist
+- Source folder save states
+- Config profiles + option for turning off autosaves?
+- Either the config html being opened in the main window OR only specific configs being synced from the config window to the main window to prevent overwriting other values + preventing interactions with the main window when another window is open
 
 ### Minor
 - Configurable hotkeys
@@ -21,14 +24,15 @@ I made this app for the main purpose of rating my images and then sorting out th
 - One combined notification for all missing folders
 - Maybe put some "config" values into other files
 - Better looking UI
+- A toggleable way to see an image's rating without right-click
 - Re-write of this documentation
 
 # Detailed functionality
 ## Files
-Installation is user-based. The app will be installed in your local appdata folder (for example `C:\Users\%username%\AppData\Local\slideshow_gallery` in Windows). Start menu and desktop shortcuts will be created during installation. Delete them if you don't need them.
-The app's files are stored in your appdata directory, within the subfolder slideshow-gallery (for example `C:\Users\%username%\Appdata\Roaming\slideshow-gallery` in Windows).
+The installation is user-based. The app will be installed in your local appdata folder (for example `C:\Users\%username%\AppData\Local\slideshow_gallery` in Windows). Start menu and desktop shortcuts will be created during installation. Delete them if you don't need them.
+The app's settings and such are stored in your appdata directory, within the subfolder slideshow-gallery (for example `C:\Users\%username%\Appdata\Roaming\slideshow-gallery` in Windows).
 ### config.json
-This file contains the app's configs. Whenever you change a setting in the GUI it will be saved to this file. When the app starts it will look for the file and load the saved configurations.
+This file contains the app's configs. Whenever you change a setting in the GUI it will be saved to this file (no need for manual saving). When the app starts it will look for the file and load the saved configurations.
 ### ratings.json
 An image can be rated using the right click context menu or by pressing the corresponding number key (1, 2, 3, 4 or 5) while hovering the cursor over it. Your image ratings are stored in this file. Previously rated images that can no longer be found by the app will be re-assigned their current paths if the app finds them in your currently loaded folders.
 ### <custom-pool-name>.json
@@ -59,6 +63,7 @@ Controls which images from the configured source folder(s) (see **config.json**)
 - Highest rating: Images rated 5
 - Low rating: Images rated 1 or 2
 - Saved grids: See further below
+- Custom pool: Any custom pool the app detects can also be selected in this menu
 ### On left click
 Defines the action that happens when you left click an image. These are the options:
 - Pause/resume: Pauses or resumes an image
@@ -77,7 +82,6 @@ Moves all images rated 1 or 2 to the configured move target folder, see **Select
 ![image](https://github.com/Index154/slideshow-gallery/assets/105119758/32e0c0cd-99e3-49cb-8781-14e4ed6bf4d9)
 
 Here you can configure the image source paths as well as the "move" action target path.
-After you add, remove, enable or disable something here you currently have to reload the main window with 'R' for the changes to take effect!
 ### Add source
 Pressing this button will open a dialog for selecting one folder to add as a source.
 ### Add source with subfolders
@@ -110,3 +114,4 @@ You can right click an image and select an action to perform on it:
 - R: Reloads the window
 - Ctrl: Opens the devtools (inspect element and such)
 - Number keys 1 to 5: Apply the corresponding rating to the image your mouse cursor is currently on
+- For more hotkeys, look at the right click context menu
