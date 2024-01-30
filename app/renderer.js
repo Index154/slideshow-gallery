@@ -531,36 +531,45 @@ let imgDim = imgSettings[config.imageCount].dim
 
 	// Keyboard shortcut listener
 	window.addEventListener('keyup', (e) => {
-		let element = document.elementFromPoint(mousePosition.x, mousePosition.y)
-
-		if(e.key == '5' || e.key == '4' || e.key == '3' || e.key == '2' || e.key == '1'){
-			if(element !== undefined && element.src !== undefined) rateImg(element, e.key)
-		}else if(e.key == 'u'){
-			if(element !== undefined && element.src !== undefined) {
-				let id = parseInt(element.id.substring(element.id.length - 1, element.id.length))
-				changeImg(element, 'click', true)
-			}
+		
+		if(e.key == 'Control'){
+			ipcRenderer.send('dev-tools')
+			return
 		}else if(e.key == 'r'){
 			reload()
-		}else if(e.key == 'z'){
-			if(element !== undefined && element.src !== undefined) zoom(element)
-		}else if(e.key == 'c'){
-			if(element !== undefined && element.src !== undefined){
-				let id = parseInt(element.id.substring(element.id.length - 1, element.id.length))
-				changeImg(element, 'click', false)
+			return
+		}
+
+		// Prepare for interactions that require the mouse being over an element
+		let element = document.elementFromPoint(mousePosition.x, mousePosition.y)
+		if(element == undefined || element.src == undefined){
+			if(imgCount == 1){
+				element = document.querySelector('#img0')
+			}else{
+				return
 			}
+		}
+
+		if(e.key == '5' || e.key == '4' || e.key == '3' || e.key == '2' || e.key == '1'){
+			rateImg(element, e.key)
+		}else if(e.key == 'u'){
+			let id = parseInt(element.id.substring(element.id.length - 1, element.id.length))
+			changeImg(element, 'click', true)
+		}else if(e.key == 'z'){
+			zoom(element)
+		}else if(e.key == 'c'){
+			let id = parseInt(element.id.substring(element.id.length - 1, element.id.length))
+			changeImg(element, 'click', false)
 		}else if(e.key == 'p'){
-			if(element !== undefined && element.src !== undefined) pauseImg(element)
+			pauseImg(element)
 		}else if(e.key == 'q'){
-			if(element !== undefined && element.src !== undefined) removeFromPool(element)
+			removeFromPool(element)
 		}else if(e.key == 'e'){
-			if(element !== undefined && element.src !== undefined) addToPool(element)
+			addToPool(element)
 		}else if(e.key == 'o'){
-			if(element !== undefined && element.src !== undefined) ipcRenderer.send('open-folder', element.src)
+			ipcRenderer.send('open-folder', element.src)
 		}else if(e.key == 'm'){
-			if(element !== undefined && element.src !== undefined) move(element)
-		}else if(e.key == 'Control'){
-			ipcRenderer.send('dev-tools')
+			move(element)
 		}
 	}, true)
 
