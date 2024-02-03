@@ -10,6 +10,7 @@ let ratingsPath = path.join(appdataPath, 'ratings.json')
 let configPath = path.join(appdataPath, 'config.json')
 let config = JSON.parse(fs.readFileSync(configPath, 'utf8'))
 let mousePosition = {x: 0, y: 0}
+let inputFieldFocus = false
 
 // Image count and size
 let infoDiv = document.querySelector('#imgDisplay')
@@ -531,6 +532,9 @@ let imgDim = imgSettings[config.imageCount].dim
 
 	// Keyboard shortcut listener
 	window.addEventListener('keyup', (e) => {
+
+		// Ignore keyup event while the text field is focused
+		if(inputFieldFocus) return
 		
 		if(e.key == 'Control'){
 			ipcRenderer.send('dev-tools')
@@ -710,4 +714,12 @@ let imgDim = imgSettings[config.imageCount].dim
 	// Add all to pool button - Adds all active images to the active editing pool
 	document.querySelector('#addToPoolButton').addEventListener('click', (e) => {
 		addAllToPool()
+	})
+	// Custom pool input field - Detect focus and unfocus so keyup events can be ignored while typing in it
+	let customPoolInput = document.querySelector('#customPoolInput')
+	customPoolInput.addEventListener('focus', () => {
+		inputFieldFocus = true
+	})
+	customPoolInput.addEventListener('blur', () => {
+		inputFieldFocus = false
 	})
