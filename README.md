@@ -9,7 +9,8 @@ I made this app for the main purpose of rating my images and then sorting out th
 
 ## Planned changes and additions
 ### Important
-- More control over custom image pools
+- A way to iterate through all images one by one to allow for easier selection of new images for a custom pool
+- Deletion and renaming of custom pools
 - Popup when previously rated images are missing. Right now it automatically changes the path of a rating if an images of the same name is found in a different folder source. This should be avoided
 - Button for cleaning up the ratings file, removing ratings for files that no longer exist
 - Source folder save states

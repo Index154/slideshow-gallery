@@ -45,9 +45,11 @@
 			<br>
 			<label>New custom pool: </label> <input type="text" id="customPoolInput" name="customPoolInput" style="width: 120px" value="">
 			<button type="button" id="addPoolButton" class="menu-margin">Add</button>
-			<label>Editing custom pool: </label> <select name="editingPool" id="editingPoolSelector" class="menu-margin"></select>
+			<label>Editing custom pool: </label> <select name="editingPool" id="editingPoolSelector" class="menu-margin">
+				<option value="">None</option>
+			</select>
 			<button type="button" id="addToPoolButton" class="menu-margin">Add all to pool</button>
-			<label>Unrated count = </label><label id="unratedCounter" class="menu-margin"></label>
+			<label>Found images: </label><label id="imageCounter" class="menu-margin"></label>
 			<button type="button" id="moveButton">Move all low rated</button>
 		</div>
 		

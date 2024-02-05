@@ -5,6 +5,7 @@ const fs = require('fs')
 const { decode } = require('html-entities')
 let mainWin
 let mainWinState = 'preparing'
+let devToolsOnStart = false
 
 // Prevent the app from launching during a squirrel startup
 if (require('electron-squirrel-startup')) app.quit()
@@ -133,7 +134,7 @@ const createWindow = (width, height, posX, htmlFile, maximize, alwaysOnTop, data
 	
 	// Maximize window and load HTML
 	win.removeMenu()
-	//win.webContents.openDevTools()
+	if(devToolsOnStart) win.webContents.openDevTools()
 	if(maximize) win.maximize()
 	if(alwaysOnTop) win.setAlwaysOnTop(true, 'modal-panel')
 	htmlFile = path.join('.', 'html', htmlFile)
@@ -250,7 +251,7 @@ app.on('window-all-closed', () => {
 			},
 			{
 				// Remove image from editing pool
-				label: 'Remove from pool (q)',
+				label: 'Exclude from pool (q)',
 				click: () => { e.sender.send('context-menu-command', 'remove-from-pool', rightClickPosition) }
 			}
 		]

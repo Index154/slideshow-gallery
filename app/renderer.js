@@ -33,8 +33,8 @@ let imgDim = imgSettings[config.imageCount].dim
 // Get settings from config and update UI elements
 // --------------------------------------------------------------------------------------------------------------
 	// Selection mode / Image pool (what images should be cycled through)
-	let imagePool = config.imagePool	// The UI value is updated later because of custom pools not being loaded yet!
-	let editingPool = config.editingPool	// The UI value is updated later because of custom pools not being loaded yet!
+	let imagePool = config.imagePool	// The UI values for these are updated later because of custom pools not being loaded yet!
+	let editingPool = config.editingPool	
 	// Click mode / Left click action (what happens when you click an image)
 	let clickAction = config.clickAction
 	document.querySelector('#clickActionSelector').value = clickAction
@@ -68,17 +68,15 @@ let imgDim = imgSettings[config.imageCount].dim
 	// Insert custom image pools into selectors
 	let imagePoolSelector = document.querySelector('#imagePoolSelector')
 	let editingPoolSelector = document.querySelector('#editingPoolSelector')
-	// Get custom pool files from folder
+	// Get custom pool files from folder and prepare variables
 	let customPoolList = []
 	let customPools = {}
-	let activeCustomPools = {}
 	let customPoolPath = path.join(appdataPath, 'custom-pools')
 	let customPoolFiles = fs.readdirSync(path.join(appdataPath, 'custom-pools'))
 	customPoolFiles.forEach(customPool => {
 		if(customPool.substring(customPool.length - 5, customPool.length).includes('.json')){
 			let customPoolName = customPool.replace(/\.json/, '')
 			customPools[customPoolName] = JSON.parse(fs.readFileSync(path.join(customPoolPath, customPool), 'utf8'))
-			activeCustomPools[customPoolName] = []
 			customPoolList.push(customPoolName)
 			let poolHtml = '<option value="' + customPoolName + '">' + customPoolName + '</option>'
 			imagePoolSelector.insertAdjacentHTML('beforeend', poolHtml)
@@ -107,23 +105,36 @@ let imgDim = imgSettings[config.imageCount].dim
 	}
 	for(i = 0; i < images.length; i++){
 		let tempImg = images[i].replace(/\\/g, '/')	// Account for formatting differences
-		if(!(tempImg in ratingsCopy)){
-			unratedImages.push(tempImg)
-		}else{
-			if(parseInt(ratingsCopy[tempImg].rating) <= 2){
-				lowRatedImages.push(tempImg)
-			}else{
-				if(parseInt(ratingsCopy[tempImg].rating) > 3) {
-					highRatedImages.push(tempImg)
-					highRatedImageObjects.push(ratingsCopy[tempImg])
-					highRatedImageObjects[highRatedImageObjects.length - 1].link = tempImg
-				}
-				if(parseInt(ratingsCopy[tempImg].rating) > 4) highestRatedImages.push(tempImg)
-			}
+		// Add images to active custom pool
+		if(editingPool != ''){
+			if(customPools[editingPool].include.includes(tempImg)) customPools[editingPool].include.push(tempImg)
+			else if(customPools[editingPool].exclude.includes(tempImg)) customPools[editingPool].exclude.push(tempImg)
 		}
-		customPoolList.forEach(pool => {
-			if(customPools[pool].includes(tempImg)) activeCustomPools[pool].push(tempImg)
-		})
+
+		// Add images to default pool unless they are in the editing pool
+		let isInEditingPool = false
+		if(customPools[editingPool] != undefined){
+			isInEditingPool = customPools[editingPool].include.includes(tempImg) || customPools[editingPool].exclude.includes(tempImg)
+		}
+		if(!isInEditingPool){
+			if(!(tempImg in ratingsCopy)){
+				unratedImages.push(tempImg)
+			}else{
+				if(parseInt(ratingsCopy[tempImg].rating) <= 2){
+					lowRatedImages.push(tempImg)
+				}else{
+					if(parseInt(ratingsCopy[tempImg].rating) > 3) {
+						highRatedImages.push(tempImg)
+						highRatedImageObjects.push(ratingsCopy[tempImg])
+						highRatedImageObjects[highRatedImageObjects.length - 1].link = tempImg
+					}
+					if(parseInt(ratingsCopy[tempImg].rating) > 4) highestRatedImages.push(tempImg)
+				}
+			}
+		}else{
+			images.splice(i, 1)
+			i--
+		}
 	}
 	// Prepare newest high rated images
 	highRatedImageObjects.sort(function(a, b) {
@@ -136,8 +147,9 @@ let imgDim = imgSettings[config.imageCount].dim
 		newImages.push(highRatedImageObjects[i].link)
 	}
 
-	findFiles()
-	document.querySelector('#unratedCounter').innerHTML = unratedImages.length
+	fixRatingPaths()
+	fixCustomPoolPaths()
+	document.querySelector('#imageCounter').innerHTML = getImagePool().length
 
 // Add images to HTML + start timeouts
 // --------------------------------------------------------------------------------------------------------------
@@ -218,7 +230,7 @@ let imgDim = imgSettings[config.imageCount].dim
 				break
 			// Default: Try to load a custom image pool profile
 			default:
-				tempImages = activeCustomPools[imagePool]
+				tempImages = customPools[imagePool].include
 		}
 		return tempImages
 	}
@@ -328,13 +340,10 @@ let imgDim = imgSettings[config.imageCount].dim
 		}
 		
 		// Update unrated images counter
-		document.querySelector('#unratedCounter').innerHTML = unratedImages.length
+		if(imagePool == 'unrated') document.querySelector('#imageCounter').innerHTML = unratedImages.length
 
 		// Change image if the relevant setting is enabled
-		if(changeWhenRated) {
-			let id = parseInt(element.id.substring(element.id.length - 1, element.id.length))
-			changeImg(element, 'click', false)
-		}
+		if(changeWhenRated) changeImg(element, 'click', false)
 	}
 
 	// Scan all configured paths function
@@ -371,8 +380,9 @@ let imgDim = imgSettings[config.imageCount].dim
 			images = images.concat(tempImages)
 		}
 	}
+
 	// Fix missing file paths in ratings
-	function findFiles(){
+	function fixRatingPaths(){
 		// Build an object with the unrated image file names
 		let unratedImagesObj = {}
 		for(i = 0; i < unratedImages.length; i++){
@@ -396,6 +406,42 @@ let imgDim = imgSettings[config.imageCount].dim
 		fs.writeFileSync(ratingsPath, JSON.stringify(ratings, null, 4))
 	}
 
+	// Fix missing file paths in custom pools
+	function fixCustomPoolPaths(){
+
+		// Build list of image file names referencing the full paths to the image files
+		let imagesObj = {}
+		for(i = 0; i < images.length; i++){
+			let parts = images[i].split('\\')
+			imagesObj[parts[parts.length - 1]] = images[i].replace(/\\/g, '/')	// Formatting differences...
+		}
+
+		// Loop through all detected custom pools, update the arrays and then save the files
+		for(o = 0; o < customPoolList.length; o++){
+			let pool = customPools[customPoolList[o]]
+			fixPoolComponent(pool.include, imagesObj)
+			fixPoolComponent(pool.exclude, imagesObj)
+			fs.writeFileSync(path.join(customPoolPath, customPoolList[o] + '.json'), JSON.stringify(pool, null, 4))
+		}
+	}
+
+	// Fix missing file paths in a specific sub-array of a custom pool
+	function fixPoolComponent(component, imagesObj){
+
+		// Check for missing files in the custom pool component
+		for(i = 0; i < component.length; i++){
+			if(!fs.existsSync(component[i])) {
+				let fileParts = component[i].split('/')
+				
+				// Look for the file name in the list of loaded image names
+				if(fileParts[fileParts.length - 1] in imagesObj){
+					component[i] = imagesObj[fileParts[fileParts.length - 1]]
+				}
+			}
+		}
+
+	}
+
 	// Reload window
 	function reload(){
 		ipcRenderer.send('reload')
@@ -412,22 +458,60 @@ let imgDim = imgSettings[config.imageCount].dim
 	// Remove from custom pool
 	function removeFromPool(element){
 		let img = decodeImg(element.src)
-		if(editingPool != '' && customPools[editingPool].includes(img)) {
-			customPools[editingPool].splice(customPools[editingPool].indexOf(img), 1)
-			let updatePoolPath = path.join(customPoolPath, editingPool + '.json')
-			fs.writeFileSync(updatePoolPath, JSON.stringify(customPools[editingPool], null, 4))
-			changeImg(element, 'click', false)
+		let doChange = false
+
+		if(editingPool != ''){
+
+			// Add to exclude section
+			if(!customPools[editingPool].exclude.includes(img)) {
+				customPools[editingPool].exclude.push(img)
+				let updatePoolPath = path.join(customPoolPath, editingPool + '.json')
+				fs.writeFileSync(updatePoolPath, JSON.stringify(customPools[editingPool], null, 4))
+				doChange = true
+			}
+
+			// Remove from include section
+			if(customPools[editingPool].include.includes(img)) {
+				customPools[editingPool].include.splice(customPools[editingPool].include.indexOf(img), 1)
+				let updatePoolPath = path.join(customPoolPath, editingPool + '.json')
+				fs.writeFileSync(updatePoolPath, JSON.stringify(customPools[editingPool], null, 4))
+				doChange = true
+			}
+
+			if (doChange) {
+				removeFromAllPools(img)
+				changeImg(element, 'click', false)
+			}
 		}
 	}
 
 	// Add image to custom pool
 	function addToPool(element){
 		let img = decodeImg(element.src)
-		if(editingPool != '' && !customPools[editingPool].includes(img)) {
-			customPools[editingPool].push(img)
-			let updatePoolPath = path.join(customPoolPath, editingPool + '.json')
-			fs.writeFileSync(updatePoolPath, JSON.stringify(customPools[editingPool], null, 4))
-			changeImg(element, 'click', false)
+		let doChange = false
+
+		if(editingPool != ''){
+
+			// Add to include section
+			if(!customPools[editingPool].include.includes(img)) {
+				customPools[editingPool].include.push(img)
+				let updatePoolPath = path.join(customPoolPath, editingPool + '.json')
+				fs.writeFileSync(updatePoolPath, JSON.stringify(customPools[editingPool], null, 4))
+				doChange = true
+			}
+
+			// Remove from exclude section
+			if(customPools[editingPool].exclude.includes(img)) {
+				customPools[editingPool].exclude.splice(customPools[editingPool].exclude.indexOf(img), 1)
+				let updatePoolPath = path.join(customPoolPath, editingPool + '.json')
+				fs.writeFileSync(updatePoolPath, JSON.stringify(customPools[editingPool], null, 4))
+				doChange = true
+			}
+
+			if (doChange) {
+				removeFromAllPools(img)
+				changeImg(element, 'click', false)
+			}
 		}
 	}
 
@@ -437,6 +521,26 @@ let imgDim = imgSettings[config.imageCount].dim
 		images.forEach(img => {
 			addToPool(img)
 		})
+	}
+
+	// Remove an array value from an array if it is in the array
+	function removeIfIncludes(value, array){
+		if(array.includes(value)) {
+			array.splice(array.indexOf(value), 1)
+		}
+	}
+
+	// Remove an image from all default image pools
+	function removeFromAllPools(img){
+		img = decodeImg(img)
+		removeIfIncludes(img, unratedImages)
+		removeIfIncludes(img, highRatedImages)
+		removeIfIncludes(img, highestRatedImages)
+		removeIfIncludes(img, lowRatedImages)
+		removeIfIncludes(img, newImages)
+		removeIfIncludes(img, images)
+
+		document.querySelector('#imageCounter').innerHTML = getImagePool().length
 	}
 
 // Misc event listeners
@@ -654,9 +758,11 @@ let imgDim = imgSettings[config.imageCount].dim
 	// Image pool selector - Controls which array new images are drawn from when being changed
 	document.querySelector('#imagePoolSelector').addEventListener('change', (e) => {
 		// Update variable and save to config file
-		imagePool = e.target.value
-		config.imagePool = e.target.value
-		reload()
+		if(imagePool != e.target.value){
+			imagePool = e.target.value
+			config.imagePool = e.target.value
+			reload()
+		}
 	})
 	// Image count selector - Controls the number of images in the window (only applied on reload)
 	document.querySelector('#imageCountSelector').addEventListener('change', (e) => {
@@ -694,10 +800,13 @@ let imgDim = imgSettings[config.imageCount].dim
 	// Add pool button - Adds the pool currently in the custom pool input field
 	document.querySelector('#addPoolButton').addEventListener('click', () => {
 		let element = document.querySelector('#customPoolInput')
-		if(element.value != ''){
+		if(element.value != '' && element.value != 'None'){
 			// Add the custom pool (make file)
 			let newPoolPath = path.join(customPoolPath, element.value + '.json')
-			let newPool = []
+			let newPool = {
+				include: [],
+				exclude: []
+			}
 			if(!fs.existsSync(newPoolPath)) {
 				fs.writeFileSync(newPoolPath, JSON.stringify(newPool, null, 4))
 				let poolHtml = '<option value="' + element.value + '">' + element.value + '</option>'
@@ -708,8 +817,11 @@ let imgDim = imgSettings[config.imageCount].dim
 	// Editing pool selector - Changes the currently active editing pool (will be modified by the relevant functions)
 	document.querySelector('#editingPoolSelector').addEventListener('change', (e) => {
 		// Update variable
-		editingPool = e.target.value
-		config.editingPool = e.target.value
+		if(editingPool != e.target.value){
+			editingPool = e.target.value
+			config.editingPool = e.target.value
+			reload()
+		}
 	})
 	// Add all to pool button - Adds all active images to the active editing pool
 	document.querySelector('#addToPoolButton').addEventListener('click', (e) => {
