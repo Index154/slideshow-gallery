@@ -200,57 +200,68 @@ app.on('window-all-closed', () => {
 		// For many of the options the renderer process has to call back to the main process but can't be avoided I think
 		const template = [
 			{
-				// Pause or unpause image
 				label: 'Pause / resume (p)',
 				type: 'checkbox',
 				checked: pausedBox,
 				click: () => { e.sender.send('context-menu-command', 'pause-resume', rightClickPosition) }
 			},
 			{
-				// Open image in new window
 				label: 'Zoom (z)',
 				click: () => { e.sender.send('context-menu-command', 'zoom', rightClickPosition) }
 			},
 			{
-				// Revert to previous image
 				label: 'Revert (u)',
 				click: () => { e.sender.send('context-menu-command', 'revert', rightClickPosition)}
 			},
 			{
-				// Open image in new window
 				label: 'Change (c)',
 				click: () => { e.sender.send('context-menu-command', 'change-image', rightClickPosition) }
 			},
 			{
-				// Show image in folder view
+				label: 'Copy generative metadata...',
+				submenu: [
+					{
+						label: 'Positive prompt',
+						click: () => { e.sender.send('context-menu-command', 'copy-posprompt', rightClickPosition) }
+					},
+					{
+						label: 'Negative prompt',
+						click: () => { e.sender.send('context-menu-command', 'copy-negprompt', rightClickPosition) }
+					},
+					{
+						label: 'Seed',
+						click: () => { e.sender.send('context-menu-command', 'copy-seed', rightClickPosition) }
+					},
+					{
+						label: 'Checkpoint',
+						click: () => { e.sender.send('context-menu-command', 'copy-checkpoint', rightClickPosition) }
+					}
+				]
+			},
+			{type: 'separator'},
+			{
 				label: 'Open in folder (o)',
 				click: () => { e.sender.send('context-menu-command', 'open-path', rightClickPosition) }
 			},
 			{
-				// Open image in external app
 				label: 'Open',
 				click: () => { e.sender.send('context-menu-command', 'open-image', rightClickPosition) }
-			},
+			},/*
 			{type: 'separator'},
-			// Rate image 1 to 5
 			{label: 'Rate 5', type: 'checkbox', checked: checkBoxes[5], click: () => { e.sender.send('context-menu-command', 'rate-5', rightClickPosition) }},
 			{label: 'Rate 4', type: 'checkbox', checked: checkBoxes[4], click: () => { e.sender.send('context-menu-command', 'rate-4', rightClickPosition) }},
 			{label: 'Rate 3', type: 'checkbox', checked: checkBoxes[3], click: () => { e.sender.send('context-menu-command', 'rate-3', rightClickPosition) }},
 			{label: 'Rate 2', type: 'checkbox', checked: checkBoxes[2], click: () => { e.sender.send('context-menu-command', 'rate-2', rightClickPosition) }},
-			{label: 'Rate 1', type: 'checkbox', checked: checkBoxes[1], click: () => { e.sender.send('context-menu-command', 'rate-1', rightClickPosition) }},
-			// Move file to configured folder
+			{label: 'Rate 1', type: 'checkbox', checked: checkBoxes[1], click: () => { e.sender.send('context-menu-command', 'rate-1', rightClickPosition) }},*/
 			{
 				label: 'Move file (m)',
 				click: () => { e.sender.send('context-menu-command', 'move-file', rightClickPosition) }
 			},
-			{type: 'separator'},
 			{
-				// Add image to editing pool
 				label: 'Add to pool (e)',
 				click: () => { e.sender.send('context-menu-command', 'add-to-pool', rightClickPosition) }
 			},
 			{
-				// Remove image from editing pool
 				label: 'Exclude from pool (q)',
 				click: () => { e.sender.send('context-menu-command', 'remove-from-pool', rightClickPosition) }
 			}

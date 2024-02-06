@@ -9,9 +9,9 @@ I made this app for the main purpose of rating my images and then sorting out th
 
 ## Planned changes and additions
 ### Important
-- A way to iterate through all images one by one to allow for easier selection of new images for a custom pool
-- Deletion and renaming of custom pools
-- Popup when previously rated images are missing. Right now it automatically changes the path of a rating if an images of the same name is found in a different folder source. This should be avoided
+- Deletion and renaming of custom pools through GUI
+- Popup when previously rated images or custom pool images are missing. Right now it automatically changes the saved paths if an image of the same name is found in a different folder source. This should be avoided
+- Determine image identity not by name but by file hash or something like that?
 - Button for cleaning up the ratings file, removing ratings for files that no longer exist
 - Source folder save states
 - Config profiles + option for turning off autosaves?
@@ -20,14 +20,15 @@ I made this app for the main purpose of rating my images and then sorting out th
 
 ### Minor
 - Configurable hotkeys
-- Reduced chances of duplicate images in the grid
+- Reduced chances of duplicate images in the grid (ideally 0)
 - Config for whether the grid images should be the same after reloading (rememberImages flag)
-- Full freedom in image count selection + automatic scaling to the window size
+- Full freedom in image count selection + automatic scaling to the window size (annoying and hard to implement)
 - One combined notification for all missing folders
 - Maybe put some "config" values into other files
 - Better looking UI
-- A toggleable way to see an image's rating without right-click
+- A toggleable way to see an image's rating without right-clicking it
 - Re-write of this documentation
+- In-app help pages?
 
 # Detailed functionality
 ## Files

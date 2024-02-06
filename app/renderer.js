@@ -1,5 +1,5 @@
 // Unsafe node access module
-const { ipcRenderer } = require('electron')
+const { ipcRenderer, clipboard } = require('electron')
 const fs = require('fs')
 const path = require('node:path')
 
@@ -543,6 +543,29 @@ let imgDim = imgSettings[config.imageCount].dim
 		document.querySelector('#imageCounter').innerHTML = getImagePool().length
 	}
 
+	// Compare the contents of two files at specified paths (buffers)
+	function compareFileBuffers(pathA, pathB){
+		let bufferA = fs.readFileSync(pathA)
+		let bufferB = fs.readFileSync(pathB)
+		return bufferA.equals(bufferB)
+	}
+
+	// Copy some prompt information to clipboard (depending on specified parameter)
+	function copyFromPrompt(element, option){
+		splitStrings = {
+			'positive': ['tEXtparameters', 'Negative prompt:'],
+			'negative': ['Negative prompt:', 'Steps:'],
+			'seed': ['Seed:', ', Size:'],
+			'checkpoint': ['Model:', ', VAE']
+		}
+		
+		let bufferString = fs.readFileSync(decodeImg(element.src)).toString()
+		if(bufferString.includes(splitStrings[option][0]) && bufferString.includes(splitStrings[option][1])){
+			let copyContent = bufferString.split(splitStrings[option][0])[1].split(splitStrings[option][1])[0].slice(1).replace(/(\r\n|\n|\r)/gm, '')	// Replace linebreaks and remove first char cause idk how else to remove the char after 'tEXtparameters'
+			clipboard.writeText(copyContent)
+		}
+	}
+
 // Misc event listeners
 // --------------------------------------------------------------------------------------------------------------
 	// Right click / context menu event listener
@@ -602,11 +625,29 @@ let imgDim = imgSettings[config.imageCount].dim
 		else if(command == 'move-file'){
 			move(element)
 		}
+		// Add file to custom pool
 		else if(command == 'add-to-pool'){
 			addToPool(element)
 		}
+		// Remove file from custom pool
 		else if(command == 'remove-from-pool'){
 			removeFromPool(element)
+		}
+		// Copy positive prompt from file metadata if possible
+		else if(command == 'copy-posprompt'){
+			copyFromPrompt(element, 'positive')
+		}
+		// Copy negative prompt from file metadata if possible
+		else if(command == 'copy-negprompt'){
+			copyFromPrompt(element, 'negative')
+		}
+		// Copy seed from file metadata if possible
+		else if(command == 'copy-seed'){
+			copyFromPrompt(element, 'seed')
+		}
+		// Copy negative prompt from file metadata if possible
+		else if(command == 'copy-checkpoint'){
+			copyFromPrompt(element, 'checkpoint')
 		}
 
 	})
