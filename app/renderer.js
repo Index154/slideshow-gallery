@@ -2,6 +2,7 @@
 const { ipcRenderer, clipboard } = require('electron')
 const fs = require('fs')
 const path = require('node:path')
+//const ExifReader = require('exifreader');
 
 // Defaults and paths
 let appdataPath = ipcRenderer.sendSync('get-config')
@@ -150,6 +151,9 @@ let imgDim = imgSettings[config.imageCount].dim
 	fixRatingPaths()
 	fixCustomPoolPaths()
 	document.querySelector('#imageCounter').innerHTML = getImagePool().length
+
+	//let buffer = fs.readFileSync('G:\\1.png')
+	//console.log(ExifReader.load(buffer))
 
 // Add images to HTML + start timeouts
 // --------------------------------------------------------------------------------------------------------------
@@ -553,7 +557,7 @@ let imgDim = imgSettings[config.imageCount].dim
 	// Copy some prompt information to clipboard (depending on specified parameter)
 	function copyFromPrompt(element, option){
 		splitStrings = {
-			'positive': ['tEXtparameters', 'Negative prompt:'],
+			'positive': ['parameters', 'Negative prompt:'],
 			'negative': ['Negative prompt:', 'Steps:'],
 			'seed': ['Seed:', ', Size:'],
 			'checkpoint': ['Model:', ', VAE']
