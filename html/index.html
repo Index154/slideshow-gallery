@@ -18,6 +18,7 @@
 				<option value="twelve">12</option>
 				<option value="eight">8</option>
 				<option value="eightSmall">8 (small)</option>
+				<option value="two">2</option>
 				<option value="one">1</option>
 			</select>
 			<div class="tooltip"><label>Delay: </label> <input type="text" id="delayInput" name="delay" style="width: 30px" value="6">
@@ -48,9 +49,12 @@
 			<label>Editing custom pool: </label> <select name="editingPool" id="editingPoolSelector" class="menu-margin">
 				<option value="">None</option>
 			</select>
-			<button type="button" id="addToPoolButton" class="menu-margin">Add all to pool</button>
 			<label>Found images: </label><label id="imageCounter" class="menu-margin"></label>
-			<button type="button" id="moveButton">Move all low rated</button>
+			<button type="button" id="addToPoolButton" class="menu-margin">Add all to pool</button>
+			<button type="button" id="removeFromPoolButton" class="menu-margin">Remove all from pool</button>
+			<button type="button" id="moveButton">Move low rated</button>
+			<button type="button" id="copyButton">Copy all available</button>
+			<button type="button" id="exportButton">Export prompts</button>
 		</div>
 		
 		<!-- This will be filled with image elements automatically -->

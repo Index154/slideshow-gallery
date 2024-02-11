@@ -246,13 +246,7 @@ app.on('window-all-closed', () => {
 			{
 				label: 'Open',
 				click: () => { e.sender.send('context-menu-command', 'open-image', rightClickPosition) }
-			},/*
-			{type: 'separator'},
-			{label: 'Rate 5', type: 'checkbox', checked: checkBoxes[5], click: () => { e.sender.send('context-menu-command', 'rate-5', rightClickPosition) }},
-			{label: 'Rate 4', type: 'checkbox', checked: checkBoxes[4], click: () => { e.sender.send('context-menu-command', 'rate-4', rightClickPosition) }},
-			{label: 'Rate 3', type: 'checkbox', checked: checkBoxes[3], click: () => { e.sender.send('context-menu-command', 'rate-3', rightClickPosition) }},
-			{label: 'Rate 2', type: 'checkbox', checked: checkBoxes[2], click: () => { e.sender.send('context-menu-command', 'rate-2', rightClickPosition) }},
-			{label: 'Rate 1', type: 'checkbox', checked: checkBoxes[1], click: () => { e.sender.send('context-menu-command', 'rate-1', rightClickPosition) }},*/
+			},
 			{
 				label: 'Move file (m)',
 				click: () => { e.sender.send('context-menu-command', 'move-file', rightClickPosition) }
@@ -264,7 +258,13 @@ app.on('window-all-closed', () => {
 			{
 				label: 'Exclude from pool (q)',
 				click: () => { e.sender.send('context-menu-command', 'remove-from-pool', rightClickPosition) }
-			}
+			},
+			{type: 'separator'},
+			{label: 'Rate 5', type: 'checkbox', checked: checkBoxes[5], click: () => { e.sender.send('context-menu-command', 'rate-5', rightClickPosition) }},
+			{label: 'Rate 4', type: 'checkbox', checked: checkBoxes[4], click: () => { e.sender.send('context-menu-command', 'rate-4', rightClickPosition) }},
+			{label: 'Rate 3', type: 'checkbox', checked: checkBoxes[3], click: () => { e.sender.send('context-menu-command', 'rate-3', rightClickPosition) }},
+			{label: 'Rate 2', type: 'checkbox', checked: checkBoxes[2], click: () => { e.sender.send('context-menu-command', 'rate-2', rightClickPosition) }},
+			{label: 'Rate 1', type: 'checkbox', checked: checkBoxes[1], click: () => { e.sender.send('context-menu-command', 'rate-1', rightClickPosition) }}
 		]
 		const menu = Menu.buildFromTemplate(template)
 		menu.popup({ window: BrowserWindow.fromWebContents(e.sender) })
@@ -282,6 +282,12 @@ app.on('window-all-closed', () => {
 		let pathParts = path.split('/')
 		fileName = pathParts[pathParts.length - 1]
 		fs.rename(path, movePath + "\\" + fileName, (err) => {if(err) throw err})
+	})
+	// Copy image to configured folder
+	ipcMain.on('copy-file', (e, src, dest) => {
+		let pathParts = src.split('/')
+		fileName = pathParts[pathParts.length - 1]
+		fs.copyFile(src, dest + "\\" + fileName, (err) => {if(err) throw err})
 	})
 	// Delete file
 	ipcMain.on('delete-file', (e, path) => {

@@ -2,7 +2,7 @@
 const { ipcRenderer, clipboard } = require('electron')
 const fs = require('fs')
 const path = require('node:path')
-//const ExifReader = require('exifreader');
+//const ExifReader = require('exifreader')
 
 // Defaults and paths
 let appdataPath = ipcRenderer.sendSync('get-config')
@@ -20,6 +20,7 @@ let imgSettings = {
 	twelve: {dim: 252, count: 12},
 	eight: {dim: 375, count: 8},
 	eightSmall: {dim: 280, count: 8},
+	two: {dim: 750, count: 2},
 	one: {dim: 750, count: 1}
 }
 let imgCount = imgSettings[config.imageCount].count
@@ -72,6 +73,7 @@ let imgDim = imgSettings[config.imageCount].dim
 	// Get custom pool files from folder and prepare variables
 	let customPoolList = []
 	let customPools = {}
+	let activeCustomPool = { include: [], exclude: [] }
 	let customPoolPath = path.join(appdataPath, 'custom-pools')
 	let customPoolFiles = fs.readdirSync(path.join(appdataPath, 'custom-pools'))
 	customPoolFiles.forEach(customPool => {
@@ -106,10 +108,9 @@ let imgDim = imgSettings[config.imageCount].dim
 	}
 	for(i = 0; i < images.length; i++){
 		let tempImg = images[i].replace(/\\/g, '/')	// Account for formatting differences
-		// Add images to active custom pool
-		if(editingPool != ''){
-			if(customPools[editingPool].include.includes(tempImg)) customPools[editingPool].include.push(tempImg)
-			else if(customPools[editingPool].exclude.includes(tempImg)) customPools[editingPool].exclude.push(tempImg)
+		// Add images to active custom pool if one is selected right now
+		if(customPools[imagePool] != undefined){
+			if(customPools[imagePool].include.includes(tempImg)) activeCustomPool.include.push(tempImg)
 		}
 
 		// Add images to default pool unless they are in the editing pool
@@ -137,7 +138,7 @@ let imgDim = imgSettings[config.imageCount].dim
 			i--
 		}
 	}
-	// Prepare newest high rated images
+	// Prepare newest high rated images. For sorting purporses we have the ratingsCopy array with the extra index properties
 	highRatedImageObjects.sort(function(a, b) {
 		let indexA = a.index
 		let indexB = b.index
@@ -234,7 +235,7 @@ let imgDim = imgSettings[config.imageCount].dim
 				break
 			// Default: Try to load a custom image pool profile
 			default:
-				tempImages = customPools[imagePool].include
+				tempImages = activeCustomPool.include
 		}
 		return tempImages
 	}
@@ -425,7 +426,7 @@ let imgDim = imgSettings[config.imageCount].dim
 			let pool = customPools[customPoolList[o]]
 			fixPoolComponent(pool.include, imagesObj)
 			fixPoolComponent(pool.exclude, imagesObj)
-			fs.writeFileSync(path.join(customPoolPath, customPoolList[o] + '.json'), JSON.stringify(pool, null, 4))
+			//fs.writeFileSync(path.join(customPoolPath, customPoolList[o] + '.json'), JSON.stringify(pool, null, 4))
 		}
 	}
 
@@ -443,7 +444,6 @@ let imgDim = imgSettings[config.imageCount].dim
 				}
 			}
 		}
-
 	}
 
 	// Reload window
@@ -477,6 +477,7 @@ let imgDim = imgSettings[config.imageCount].dim
 			// Remove from include section
 			if(customPools[editingPool].include.includes(img)) {
 				customPools[editingPool].include.splice(customPools[editingPool].include.indexOf(img), 1)
+				if(editingPool == imagePool && activeCustomPool.includes(img)) activeCustomPool.include.splice(activeCustomPool.include.indexOf(img), 1)
 				let updatePoolPath = path.join(customPoolPath, editingPool + '.json')
 				fs.writeFileSync(updatePoolPath, JSON.stringify(customPools[editingPool], null, 4))
 				doChange = true
@@ -499,6 +500,7 @@ let imgDim = imgSettings[config.imageCount].dim
 			// Add to include section
 			if(!customPools[editingPool].include.includes(img)) {
 				customPools[editingPool].include.push(img)
+				if(editingPool == imagePool) activeCustomPool.include.push(img)
 				let updatePoolPath = path.join(customPoolPath, editingPool + '.json')
 				fs.writeFileSync(updatePoolPath, JSON.stringify(customPools[editingPool], null, 4))
 				doChange = true
@@ -521,9 +523,17 @@ let imgDim = imgSettings[config.imageCount].dim
 
 	// Add all visible images to custom pool
 	function addAllToPool(){
+		let elements = document.querySelectorAll('img')
+		elements.forEach(element => {
+			addToPool(element)
+		})
+	}
+
+	// Remove all visible images from custom pool
+	function removeAllFromPool(){
 		let images = document.querySelectorAll('img')
 		images.forEach(img => {
-			addToPool(img)
+			removeFromPool(img)
 		})
 	}
 
@@ -748,9 +758,7 @@ let imgDim = imgSettings[config.imageCount].dim
 		// Get current grid images
 		imageElements = document.querySelectorAll('img')
 		for(x = 0; x < imageElements.length; x++){
-			if(!imageElements[x].src.includes('images/no-images.png')){
-				config.latestGrid[x] = {src: imageElements[x].src, alt: imageElements[x].alt, state: imageElements[x].class}
-			}
+			config.latestGrid[x] = {src: imageElements[x].src, alt: imageElements[x].alt, state: imageElements[x].class}
 		}
 		// Save config
 		saveConfig('')
@@ -799,6 +807,37 @@ let imgDim = imgSettings[config.imageCount].dim
 			}
 		}
 		lowRatedImages = []
+	})
+	// Copy all button - Copies all images in the active pool to the target folder (selected on click)
+	document.querySelector('#copyButton').addEventListener('click', () => {
+		let pickedPath = ipcRenderer.sendSync('open-dialog')
+
+		// If the user cancels the action then the path will be undefined. In that case don't do anything
+		if(pickedPath !== undefined) {			
+			let imgs = getImagePool()
+			for(i = 0; i < 1; i++){
+				let img = decodeImg(imgs[i])
+				ipcRenderer.send('copy-file', img, pickedPath)
+			}
+		}
+	})
+	// Export prompts button - Export all positive prompts from the active image pool to a text file
+	document.querySelector('#exportButton').addEventListener('click', () => {
+		let pickedPath = ipcRenderer.sendSync('open-dialog')
+
+		// If the user cancels the action then the path will be undefined. In that case don't do anything
+		if(pickedPath !== undefined) {			
+			let imgs = getImagePool()
+			let prompts = []
+			for(i = 0; i < imgs.length; i++){
+				let img = fs.readFileSync(decodeImg(imgs[i])).toString()
+				if(img.includes('parameters') && img.includes('Negative prompt:')) {
+					img = img.split('parameters')[1].split('Negative prompt:')[0].slice(1).replace(/(\r\n|\n|\r)/gm, '')
+					prompts.push(img)
+				}
+			}
+			fs.writeFileSync(pickedPath + "\\export.txt", prompts.join('\n'))
+		}
 	})
 	// Image pool selector - Controls which array new images are drawn from when being changed
 	document.querySelector('#imagePoolSelector').addEventListener('change', (e) => {
@@ -871,6 +910,10 @@ let imgDim = imgSettings[config.imageCount].dim
 	// Add all to pool button - Adds all active images to the active editing pool
 	document.querySelector('#addToPoolButton').addEventListener('click', (e) => {
 		addAllToPool()
+	})
+	// Remove all from pool button - Removes all active images from the active editing pool
+	document.querySelector('#removeFromPoolButton').addEventListener('click', (e) => {
+		removeAllFromPool()
 	})
 	// Custom pool input field - Detect focus and unfocus so keyup events can be ignored while typing in it
 	let customPoolInput = document.querySelector('#customPoolInput')
