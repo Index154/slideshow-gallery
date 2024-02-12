@@ -822,22 +822,9 @@ let imgDim = imgSettings[config.imageCount].dim
 		}
 	})
 	// Export prompts button - Export all positive prompts from the active image pool to a text file
-	document.querySelector('#exportButton').addEventListener('click', () => {
-		let pickedPath = ipcRenderer.sendSync('open-dialog')
-
-		// If the user cancels the action then the path will be undefined. In that case don't do anything
-		if(pickedPath !== undefined) {			
-			let imgs = getImagePool()
-			let prompts = []
-			for(i = 0; i < imgs.length; i++){
-				let img = fs.readFileSync(decodeImg(imgs[i])).toString()
-				if(img.includes('parameters') && img.includes('Negative prompt:')) {
-					img = img.split('parameters')[1].split('Negative prompt:')[0].slice(1).replace(/(\r\n|\n|\r)/gm, '')
-					prompts.push(img)
-				}
-			}
-			fs.writeFileSync(pickedPath + "\\export.txt", prompts.join('\n'))
-		}
+	document.querySelector('#copyPrompt').addEventListener('click', () => {
+		// Get random prompty from active pool
+		copyFromPrompt({src: getRandImg()}, 'positive')
 	})
 	// Image pool selector - Controls which array new images are drawn from when being changed
 	document.querySelector('#imagePoolSelector').addEventListener('change', (e) => {
