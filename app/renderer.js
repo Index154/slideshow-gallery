@@ -19,7 +19,7 @@ let imgSettings = {
 	eighteen: {dim: 240, count: 18},
 	twelve: {dim: 252, count: 12},
 	eight: {dim: 375, count: 8},
-	eightSmall: {dim: 280, count: 8},
+	eightSmall: {dim: 275, count: 8},
 	two: {dim: 750, count: 2},
 	one: {dim: 750, count: 1}
 }
@@ -708,6 +708,12 @@ let imgDim = imgSettings[config.imageCount].dim
 		if(element == undefined || element.src == undefined){
 			if(imgCount == 1){
 				element = document.querySelector('#img0')
+			}else if(e.code == 'Space'){
+				console.log("space")
+				for(i = 0; i < imgCount; i++){
+					let img = document.querySelector('#img' + i)
+					pauseImg(img)
+				}
 			}else{
 				return
 			}
@@ -716,12 +722,10 @@ let imgDim = imgSettings[config.imageCount].dim
 		if(e.key == '5' || e.key == '4' || e.key == '3' || e.key == '2' || e.key == '1'){
 			rateImg(element, e.key)
 		}else if(e.key == 'u'){
-			let id = parseInt(element.id.substring(element.id.length - 1, element.id.length))
 			changeImg(element, 'click', true)
 		}else if(e.key == 'z'){
 			zoom(element)
 		}else if(e.key == 'c'){
-			let id = parseInt(element.id.substring(element.id.length - 1, element.id.length))
 			changeImg(element, 'click', false)
 		}else if(e.key == 'p'){
 			pauseImg(element)
@@ -815,7 +819,7 @@ let imgDim = imgSettings[config.imageCount].dim
 		// If the user cancels the action then the path will be undefined. In that case don't do anything
 		if(pickedPath !== undefined) {			
 			let imgs = getImagePool()
-			for(i = 0; i < 1; i++){
+			for(i = 0; i < imgs.length; i++){
 				let img = decodeImg(imgs[i])
 				ipcRenderer.send('copy-file', img, pickedPath)
 			}

@@ -1,4 +1,4 @@
-![image](https://github.com/Index154/slideshow-gallery/assets/105119758/db8094fe-35ae-4389-99ea-ffdb959b8a29)
+![image](https://github.com/Index154/slideshow-gallery/assets/105119758/3db4c39b-99d1-457a-af8d-8033ad260681)
 
 # Introduction
 An image slideshow gallery with the ability to rate images for sorting purposes.
@@ -16,7 +16,7 @@ I made this app for the main purpose of rating my images and then sorting out th
 - Source folder save states
 - Config profiles + option for turning off autosaves?
 - Either the config html being opened in the main window OR only specific configs being synced from the config window to the main window to prevent overwriting other values + preventing interactions with the main window when another window is open
-- A setting for new images to be chosen based on their parent folder and not truly randomly, thus making it so each active folder has an equal chance of being chosen as the source for the next image
+- A setting for giving each active folder an equal chance of being chosen as the source for the next image
 
 ### Minor
 - Configurable hotkeys
