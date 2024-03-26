@@ -43,7 +43,7 @@ Custom image pools created by you are saved in the subfolder custom-pools. These
 
 ## GUI
 Here is an example of what the application window looks like:
-![c567_01](https://github.com/Index154/slideshow-gallery/assets/105119758/20c0045e-6619-4994-831e-75f1f5fa8afc)
+![image](https://github.com/Index154/slideshow-gallery/assets/105119758/08fa22dd-2ced-4679-b4c9-3d46c37b29c8)
 There is a small bar at the top with several buttons and settings. I will now explain them in order.
 ### Define paths
 Press this button to configure the source folder paths to be scanned for images as well as the "move" target path. See more details below.
@@ -82,7 +82,7 @@ For the sake of knowing how much progress you've made there is also the item "Un
 Moves all images rated 1 or 2 to the configured move target folder, see **Select move target folder**.
 
 ## Path config menu
-![image](https://github.com/Index154/slideshow-gallery/assets/105119758/32e0c0cd-99e3-49cb-8781-14e4ed6bf4d9)
+![image](https://github.com/Index154/slideshow-gallery/assets/105119758/16b8a70c-06e6-4b60-be61-a33af4eeca36)
 
 Here you can configure the image source paths as well as the "move" action target path.
 ### Add source
@@ -102,7 +102,7 @@ You can see a list of all your added paths in this window. They will be shown as
 A folder and all its subfolders will be removed if you press the Delete button next to it.
 
 ## Context menu (right click)
-![image](https://github.com/Index154/slideshow-gallery/assets/105119758/283f41cb-0e53-46fd-8d79-ad0210c40c4e)
+![image](https://github.com/Index154/slideshow-gallery/assets/105119758/5946dbe2-b022-400a-b680-ef2a37968d43)
 
 You can right click an image and select an action to perform on it:
 - Paused: Can be used to pause or unpause an image
