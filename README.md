@@ -132,6 +132,9 @@ Options not yet covered in the sections above are:
 - Either the config html being opened in the main window OR only specific configs being synced from the config window to the main window to prevent overwriting other values + preventing interactions with the main window when another window is open
 - A setting for giving each active folder an equal chance of being chosen as the source for the next image
 - Keep timers running when changing settings not related to the timer
+- Confirmation prompts for certain actions
+- Fix bug of folder sources not being added correctly sometimes
+- Fix bug of timers converging for some reason when the window is open in the background for long enough
 
 ## Minor
 - Hotkey configuration
@@ -143,3 +146,4 @@ Options not yet covered in the sections above are:
 - Better looking UI
 - A toggleable way to see an image's rating without right-clicking it
 - In-app help pages?
+- A button for hiding / displaying the main menu's buttons and stuff
