@@ -38,6 +38,9 @@ window.addEventListener('unload', (e) => {
     ipcRenderer.send('sync-config', config)
 })
 
+// Diplay current file name filter
+let fileNameFilter = document.querySelector('#fileFilterInput')
+fileNameFilter.value = config.fileNameFilter
 // Display current move target folder
 let moveTarget = document.querySelector('#moveTarget')
 moveTarget.innerText = "Current: " + config.movePath
@@ -76,6 +79,11 @@ document.querySelector('#disableAllButton').addEventListener('click', (e) => {
 document.querySelector('#toggleSubCheckbox').addEventListener('change', (e) => {
     if(e.target.checked) config.toggleSubFolders = true
     else{config.toggleSubFolders = false}
+})
+// File name filter input listener
+fileNameFilter.addEventListener('blur', (e) => {
+    // Update variable for config change when closing the window
+    config.fileNameFilter = e.target.value
 })
 
 // Change all folder states function

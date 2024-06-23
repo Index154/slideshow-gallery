@@ -371,10 +371,15 @@ let imgDim = imgSettings[config.imageCount].dim
 			let tempImages = fs.readdirSync(folderPath)
 			for(i = 0; i < tempImages.length; i++){
 				
-				// Only keep files with specific file extensions
+				// Only keep files with specific file extensions. Also filter out files not matching the set filter
 				let fileEnding = tempImages[i].substring(tempImages[i].length - 5, tempImages[i].length)
 				if(fileEnding.includes('.png') || fileEnding.includes('.jpg') || fileEnding.includes('.jpeg') || fileEnding.includes('.gif') || fileEnding.includes('.webp')){
-					tempImages[i] = path.join(folderPath, tempImages[i])
+					if(config.fileNameFilter == "" || tempImages[i].includes(config.fileNameFilter)){
+						tempImages[i] = path.join(folderPath, tempImages[i])
+					}else{
+						tempImages.splice(i, 1)
+						i--
+					}
 				}else{
 					tempImages.splice(i, 1)
 					i--
