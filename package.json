@@ -1,6 +1,6 @@
 {
   "name": "slideshow-gallery",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "description": "Image slideshow gallery / grid with the ability to rate images for sorting purposes - Developed in Electron",
   "main": "app/main.js",
   "scripts": {

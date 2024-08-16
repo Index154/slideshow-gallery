@@ -11,11 +11,9 @@ I made this app for the main purpose of rating and sorting images as well as cyc
 
 
 ## Installation
-Disclaimer: The app has not been tested on any systems besides Windows 10.
 1. Go to the releases page and download the setup for the latest version
 2. Run the setup with your normal user. Do not run it as admin - The installation is user-based
 3. Done. Launch the app through the desktop or start menu shortcuts
-
 
 
 # Detailed functionality
@@ -26,7 +24,7 @@ The installation is user-based. The app will be installed in your local AppData 
 The app's settings and your user data are stored in your roaming AppData directory within the subfolder slideshow-gallery (for example `C:\Users\%username%\Appdata\Roaming\slideshow-gallery` in Windows). The important files and folders here are:
 - config.json = Contains settings
 - ratings.json = Contains image ratings
-- custom-pools folder = Contains custom image pool files
+- custom-pools (folder) = Contains custom image pool files
 
 ## GUI
 Here is an example of what the application window looks like:
