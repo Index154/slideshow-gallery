@@ -23,15 +23,6 @@ function loadFolders(array) {
 }
 loadFolders(config.sourcePaths)
 
-// Keyboard shortcut listener
-window.addEventListener('keyup', (e) => {
-    if(e.key == 'r'){
-        ipcRenderer.send('reload')
-    }else if(e.key == 'Control'){
-        ipcRenderer.send('dev-tools')
-    }
-}, true)
-
 // Before closing, sync config
 window.addEventListener('unload', (e) => {
     fs.writeFileSync(configPath, JSON.stringify(config, null, 4))
