@@ -125,19 +125,15 @@ Options not yet covered in the sections above are:
 - Popup when previously rated images or custom pool images are missing. Right now it automatically changes the saved paths if an image of the same name is found in a different folder source. This should be avoided
 - Determine image identity not by name but by file hash or something like that?
 - Button for cleaning up the ratings file, removing ratings for files that no longer exist
-- Source folder save states
-- Config profiles + option for turning off autosaves?
 - Either the config html being opened in the main window OR only specific configs being synced from the config window to the main window to prevent overwriting other values + preventing interactions with the main window when another window is open
 - A setting for giving each active folder an equal chance of being chosen as the source for the next image
 - Keep timers running when changing settings not related to the timer
 - Confirmation prompts for certain actions
 - Fix bug of folder sources not being added correctly sometimes
-- Fix bug of timers converging for some reason when the window is open in the background for long enough
 
 ## Minor
 - Hotkey configuration
 - Reduced chances of duplicate images appearing in the grid (ideally 0)
-- Config for whether the grid images should be the same after reloading (rememberImages flag)
 - Full freedom in image count selection + automatic scaling to the window size (annoying and hard to implement)
 - One combined notification for all missing folders
 - Maybe put some "config" values into other files
@@ -145,3 +141,5 @@ Options not yet covered in the sections above are:
 - A toggleable way to see an image's rating without right-clicking it
 - In-app help pages?
 - A button for hiding / displaying the main menu's buttons and stuff
+- Source folder save states
+- Config profiles + option for turning off autosaves?

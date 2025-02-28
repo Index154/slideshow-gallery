@@ -5,7 +5,7 @@ const fs = require('fs')
 const { decode } = require('html-entities')
 let mainWin
 let mainWinState = 'preparing'
-let devToolsOnStart = false
+let devToolsOnStart = true
 
 // Prevent the app from launching during a squirrel startup
 if (require('electron-squirrel-startup')) app.quit()
@@ -92,6 +92,8 @@ if(!fs.existsSync(configPath)){
 		offset: '5',
 		changeWhenRated: true,
 		rememberImages: true,
+		fileNameFilter: '',
+		metadataFilter: '',
 		clickAction: 'pauseResume',
 		imageCount: 'eight',
 		windowState: {
@@ -116,6 +118,13 @@ if(!fs.existsSync(ratingsPath)){
 	fs.writeFileSync(ratingsPath, JSON.stringify(ratings, null, 4))
 }
 
+// Create a metadata cache file if it does not exist yet
+let metadataPath = path.join(appdataPath, 'metadata.json')
+if(!fs.existsSync(metadataPath)){
+	let metadata = {}
+	fs.writeFileSync(metadataPath, JSON.stringify(metadata, null, 4))
+}
+
 // Window creation function
 const createWindow = (width, height, posX, htmlFile, maximize, alwaysOnTop, data) => {
 
@@ -127,7 +136,8 @@ const createWindow = (width, height, posX, htmlFile, maximize, alwaysOnTop, data
 		webPreferences: {
 			// !! Do not use these values if your app connects to external resources !!
 			contextIsolation: false,
-			nodeIntegration: true
+			nodeIntegration: true,
+			backgroundThrottling: false		// Prevent timers drifting while minimized
 		}
 	})
 	win.setPosition(posX, win.getPosition()[1])
@@ -285,7 +295,7 @@ app.on('window-all-closed', () => {
 	})
 	// Copy image to configured folder
 	ipcMain.on('copy-file', (e, src, dest) => {
-		let pathParts = src.split('/')
+		let pathParts = src.split('\\')
 		fileName = pathParts[pathParts.length - 1]
 		fs.copyFile(src, dest + "\\" + fileName, (err) => {if(err) throw err})
 	})

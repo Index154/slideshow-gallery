@@ -8,13 +8,16 @@ const path = require('node:path')
 let appdataPath = ipcRenderer.sendSync('get-config')
 let fallbackImage = path.join('..', 'images', 'no-images.png')
 let ratingsPath = path.join(appdataPath, 'ratings.json')
+let metadataPath = path.join(appdataPath, 'metadata.json')
 let configPath = path.join(appdataPath, 'config.json')
 let config = JSON.parse(fs.readFileSync(configPath, 'utf8'))
+let configChanged = false;
 let mousePosition = {x: 0, y: 0}
 let inputFieldFocus = false
 
 // Image count and size
-let infoDiv = document.querySelector('#imgDisplay')
+let gallery = document.getElementById('imgDisplay')
+let configDiv = document.getElementById('config')
 let imgSettings = {
 	eighteen: {dim: 240, count: 18},
 	twelve: {dim: 252, count: 12},
@@ -57,10 +60,17 @@ let imgDim = imgSettings[config.imageCount].dim
 
 // Prepare image lists
 // --------------------------------------------------------------------------------------------------------------
+	// Get previously exported metadata
+	let metadataRaw = fs.readFileSync(metadataPath, 'utf8')
+	let metadata = JSON.parse(metadataRaw)
+	let metadataFetchCount = 0
+
 	// Create array of image paths by looping through all file names in all configured folders and their subfolders
 	let images = []
 	scanFolders(config.sourcePaths, '')
 	if(images.length < 1) images.push(fallbackImage)
+	metadata = JSON.parse(metadataRaw)
+	metadataFetchCount = 0
 
 	// Get image ratings
 	let ratingsRaw = fs.readFileSync(ratingsPath, 'utf8')
@@ -173,7 +183,7 @@ let imgDim = imgSettings[config.imageCount].dim
 
 	// Insert starting images into HTML, within the imgDisplay element
 	startingImages.forEach(img => {
-		infoDiv.insertAdjacentHTML('beforeend', img)
+		gallery.insertAdjacentHTML('beforeend', img)
 	})
 
 	// Start timeouts for image cycling
@@ -187,17 +197,107 @@ let imgDim = imgSettings[config.imageCount].dim
 
 		// The first timeout only accounts for the offset so it can be tested immediately
 		let thisDelay = (offset * i) * 1000;
-		let timer = setTimeout(function doThing(i) {
+		let timer = setTimeout(function startTimer(i) {
 			// Get and change image
 			let element = document.querySelector('#img' + i)
 			changeImg(element, 'cycle', false)
-			// Update timer delay with the global variable
+			// Update timer delay with the global variable, removing the offset
 			thisDelay = delay * 1000;
-			// Function calls itself again with the new delay
-			timer = setTimeout(doThing, thisDelay, i)
+
+			// Keep cycling with the new delay
+			timer = setInterval(function repeat(i) {
+				// Get and change image
+				let element = document.querySelector('#img' + i)
+				changeImg(element, 'cycle', false)
+			}, thisDelay, i)
 
 		}, thisDelay, i)
 	}
+
+// Config tab stuff
+// --------------------------------------------------------------------------------------------------------------
+	// Insert folder names
+	let pathsFlex = document.querySelector('#pathsFlex')
+	let folderLevel = 0
+	let folderId = 0
+	function loadFolders(array) {
+		array.forEach(function(folder, index){
+			insertPath(folder, array)
+			folderId++
+			folderLevel++
+			loadFolders(folder.folders)
+			folderLevel--
+		}, array)
+	}
+	loadFolders(config.sourcePaths)
+
+	// Diplay current file name filter
+	let fileNameFilter = document.querySelector('#fileFilterInput')
+	fileNameFilter.value = config.fileNameFilter
+	// Diplay current metadata filter
+	let metadataFilter = document.querySelector('#metadataFilterInput')
+	metadataFilter.value = config.metadataFilter
+	let metadataFilterNeg = document.querySelector('#metadataNegFilterInput')
+	metadataFilterNeg.value = config.metadataFilterNegative
+	// Display current move target folder
+	let moveTarget = document.querySelector('#moveTarget')
+	moveTarget.innerText = "Current: " + config.movePath
+	// Update toggle subfolder checkbox state
+	let toggleSubFolders = config.toggleSubFolders
+	document.querySelector('#toggleSubCheckbox').checked = toggleSubFolders
+
+	// Add folder(s) button listeners
+	document.querySelector('#addFolderButton').addEventListener('click', (e) => {
+		folderDialog('source', false)
+	})
+	document.querySelector('#addFoldersButton').addEventListener('click', (e) => {
+		folderDialog('source', true)
+	})
+	document.querySelector('#pickMoveFolderButton').addEventListener('click', (e) => {
+		folderDialog('move', false)
+	})
+    // Enable all button listener
+    document.querySelector('#enableAllButton').addEventListener('click', (e) => {
+        let checkBoxes = document.querySelectorAll('input[type=checkbox]')
+        checkBoxes.forEach(element => {
+            if(element.id != "toggleSubCheckbox") element.checked = true
+        });
+        changeAllStates(config.sourcePaths, true)
+    })
+    // Disable all button listener
+    document.querySelector('#disableAllButton').addEventListener('click', (e) => {
+        let checkBoxes = document.querySelectorAll('input[type=checkbox]')
+        checkBoxes.forEach(element => {
+            if(element.id != "toggleSubCheckbox") element.checked = false
+        });
+        changeAllStates(config.sourcePaths, false)
+    })
+
+    // Toggle subfolders checkbox - If enabled, toggling a folder checkbox will also affect all its subfolders
+    document.querySelector('#toggleSubCheckbox').addEventListener('change', (e) => {
+        if(e.target.checked) config.toggleSubFolders = true
+        else{config.toggleSubFolders = false}
+		configChanged = true
+    })
+    // File name filter input listener
+    fileNameFilter.addEventListener('blur', (e) => {
+        // Update variable for config change when closing the config
+		if(e.target.value != config.fileNameFilter) configChanged = true
+        config.fileNameFilter = e.target.value
+    })
+    // Metadata filter input listener
+    metadataFilter.addEventListener('blur', (e) => {
+        // Update variable for config change when closing the config
+		if(e.target.value != config.metadataFilter) configChanged = true
+        config.metadataFilter = e.target.value
+    })
+	// Metadata (negative) filter input listener
+    metadataFilterNeg.addEventListener('blur', (e) => {
+        // Update variable for config change when closing the config
+		if(e.target.value != config.metadataFilterNegative) configChanged = true
+        config.metadataFilterNegative = e.target.value
+    })
+
 
 // Functions
 // --------------------------------------------------------------------------------------------------------------
@@ -369,13 +469,35 @@ let imgDim = imgSettings[config.imageCount].dim
 			ipcRenderer.send('open-window', 450, 400, posX, 'missing-folder.html', false, true, folderPath)
 		}else{
 			let tempImages = fs.readdirSync(folderPath)
+			let metadataFilterList = config.metadataFilter.toLowerCase().split(",")
+			let metadataFilterListNeg = config.metadataFilterNegative.toLowerCase().split(",")
 			for(i = 0; i < tempImages.length; i++){
 				
 				// Only keep files with specific file extensions. Also filter out files not matching the set filter
 				let fileEnding = tempImages[i].substring(tempImages[i].length - 5, tempImages[i].length)
 				if(fileEnding.includes('.png') || fileEnding.includes('.jpg') || fileEnding.includes('.jpeg') || fileEnding.includes('.gif') || fileEnding.includes('.webp')){
-					if(config.fileNameFilter == "" || tempImages[i].includes(config.fileNameFilter)){
-						tempImages[i] = path.join(folderPath, tempImages[i])
+					if(fileEnding.includes('.png') && (config.fileNameFilter == "" || tempImages[i].includes(config.fileNameFilter))){
+						if(config.metadataFilter == ""){
+							tempImages[i] = path.join(folderPath, tempImages[i])
+						}else{
+							// Filter out files that do not have all given filter strings in their metadata
+							// Split filter strings by comma
+							let imgPath = path.join(folderPath, tempImages[i])
+							let imgData = getMetadata(imgPath, 'positive').toLowerCase()
+							let filterMatch = true;
+							for(b = 0; b < metadataFilterList.length && filterMatch; b++){
+								if(!imgData.includes(metadataFilterList[b])) filterMatch = false;
+							}
+							for(c = 0; c < metadataFilterListNeg.length && filterMatch && config.metadataFilterNegative != ""; c++){
+								console.log(metadataFilterListNeg.length)
+								if(!metadataFilterList.includes(metadataFilterListNeg[c]) && imgData.includes(metadataFilterListNeg[c])) filterMatch = false;
+							}
+							if(filterMatch) tempImages[i] = imgPath
+							else{
+								tempImages.splice(i, 1)
+								i--
+							}
+						}
 					}else{
 						tempImages.splice(i, 1)
 						i--
@@ -388,6 +510,8 @@ let imgDim = imgSettings[config.imageCount].dim
 			}
 			// Add found images to the main array
 			images = images.concat(tempImages)
+			// Save metadata to cache file
+			fs.writeFileSync(metadataPath, JSON.stringify(metadata, null, 4))
 		}
 	}
 
@@ -409,11 +533,16 @@ let imgDim = imgSettings[config.imageCount].dim
 						ratings[unratedImagesObj[fileParts[fileParts.length - 1]]] = ratings[e]
 						delete ratings[e]
 						unratedImages.splice(unratedImages.indexOf(e), 1)
+						// Also correct the strings in the metadata cache to avoid duplicates
+						metadata[unratedImagesObj[fileParts[fileParts.length - 1]]] = metadata[e]
+						delete metadata[e]
+						console.log("Removing element")
 					}
 				}
 			}
 		}
-		fs.writeFileSync(ratingsPath, JSON.stringify(ratings, null, 4))
+		//fs.writeFileSync(ratingsPath, JSON.stringify(ratings, null, 4))
+		//fs.writeFileSync(metadataPath, JSON.stringify(metadata, null, 4))
 	}
 
 	// Fix missing file paths in custom pools
@@ -570,19 +699,146 @@ let imgDim = imgSettings[config.imageCount].dim
 	}
 
 	// Copy some prompt information to clipboard (depending on specified parameter)
-	function copyFromPrompt(element, option){
+	function getMetadata(elementSource, option){
 		splitStrings = {
 			'positive': ['parameters', 'Negative prompt:'],
 			'negative': ['Negative prompt:', 'Steps:'],
 			'seed': ['Seed:', ', Size:'],
 			'checkpoint': ['Model:', ', VAE']
 		}
-		
-		let bufferString = fs.readFileSync(decodeImg(element.src)).toString()
-		if(bufferString.includes(splitStrings[option][0]) && bufferString.includes(splitStrings[option][1])){
-			let copyContent = bufferString.split(splitStrings[option][0])[1].split(splitStrings[option][1])[0].slice(1).replace(/(\r\n|\n|\r)/gm, '')	// Replace linebreaks and remove first char cause idk how else to remove the char after 'tEXtparameters'
-			clipboard.writeText(copyContent)
+
+		elementSource = decodeImg(elementSource).replace(/\\/g, '/') // Account for formatting differences
+		let result = ""
+		if(metadata[elementSource] != null){ result = metadata[elementSource] }
+		else if(metadataFetchCount < 1000){
+			// Get metadata for newly detected images and then save it to the cache
+			console.log("Fetching new image metadata...")
+			metadataFetchCount++
+			let bufferString = fs.readFileSync(elementSource).toString()
+			if(bufferString.includes(splitStrings[option][0]) && bufferString.includes(splitStrings[option][1])){
+				result = bufferString.split(splitStrings[option][0])[1].split(splitStrings[option][1])[0].slice(1).replace(/(\r\n|\n|\r|\u0000)/gm, '')	// Replace linebreaks and remove first char cause idk how else to remove the char after 'tEXtparameters'
+			}
+			bufferString = null		// Set to null to prevent memory issues
+			metadata[elementSource] = result
 		}
+		return result
+	}
+
+	// Change all folder states function
+	function changeAllStates(array, newState) {
+		configChanged = true
+		array.forEach(function(folder){
+			folder.state = newState
+			changeAllStates(folder.folders, newState)
+		}, array, newState)
+	}
+
+	// Add folder dialog function
+	function folderDialog(folderType, includeSubfolders){
+		let pickedPath = ipcRenderer.sendSync('open-dialog')
+		// If the user cancels the action then it will be undefined
+		if(pickedPath !== undefined) {
+			// Try adding the path(s) to the config
+			if(folderType == 'source'){
+				addFolder(pickedPath[0].split('\\'), config.sourcePaths)
+				if(includeSubfolders){
+					// Get all subfolders
+					let foundFolders = scanFolderPaths(pickedPath[0])
+					for(i = 0; i < foundFolders.length; i++){
+						// Add all subfolders to the config as well
+						addFolder(foundFolders[i].split('\\'), config.sourcePaths)
+					}
+				}
+			}else{
+				config.movePath = pickedPath[0]
+				moveTarget.innerText = "Current: " + config.movePath
+			}
+			ipcRenderer.send('reload')
+		}
+	}
+
+	// Paths into HTML insertion function
+	function insertPath(folder, array){
+		// Insert
+		let path = folder.path.replace(/[:/\\\/ ]/g, "")
+		let margin = (folderLevel * 25) + 10
+		pathsFlex.insertAdjacentHTML('beforeend', '<div id="div-' + path + '"><label><input type="checkbox" id="checkbox-' + folderId + '" value="' + path + '" style="margin-left:' + margin + 'px;">' + folder.path + '</label><button type="button" id="deletePath-' + folderId + '" class="deleteButton">Delete</button></div>')
+
+		// Set checkbox state
+		let checkbox = document.querySelector('#checkbox-' + folderId)
+		if(folder.state) checkbox.checked = true
+
+		// Left click event listener for the checkbox
+		checkbox.addEventListener('change', (e) => {
+			// Toggle the clicked checkbox
+			let newState = true
+			if(!e.target.checked) newState = false
+			array[array.indexOf(folder)].state = newState
+
+			// Toggle subfolders if enabled
+			if(config.toggleSubFolders) {
+				changeAllStates(array[array.indexOf(folder)].folders, newState)
+			}
+		})
+
+		// Event listener for the delete button
+		let deleteButton = document.querySelector('#deletePath-' + folderId)
+		deleteButton.addEventListener('click', (e) => {
+			array.splice(array.indexOf(folder), 1)
+			ipcRenderer.send('reload')
+		})
+	}
+
+	// Add new folder to config function
+	function addFolder(pathParts, array) {
+		// Go through the folders in the config, checking if the folder or its parent folders are already known
+		let foundAt
+		array.forEach(function(folder, index){
+			if(folder.path == pathParts[0]) foundAt = index
+		}, pathParts)
+		if(foundAt === undefined) {
+			// If no matching folder was found, the remaining path array elements have to be added as new nested objects
+			let object = { "path": pathParts[0], "state": true, "folders": [] }
+			buildFolderObject(pathParts, object)
+			array.push(object)
+		}else{
+			// Found the folder => Continue checking the remaining subfolders
+			pathParts.splice(0, 1)
+			if(pathParts.length > 0) addFolder(pathParts, array[foundAt].folders)
+		}
+	}
+
+	// Build nested folder object function
+	function buildFolderObject(pathParts, object){
+		pathParts.splice(0, 1)
+		if(pathParts.length > 0){
+			let subObject = { "path": pathParts[0], "state": true, "folders": [] }
+			object.folders.push(subObject)
+			buildFolderObject(pathParts, object)
+		}
+	}
+
+	// Scan folder for subfolders function
+	function scanFolderPaths(foldersToScan){
+		foldersToScan = [foldersToScan]
+		let foundFolders = []
+		while(foldersToScan.length > 0){
+			// If it's a directory
+			if(fs.lstatSync(foldersToScan[0]).isDirectory() && !foldersToScan[0].includes('.tmp')){
+				// Get all file and folder names within
+				let tempFiles = fs.readdirSync(foldersToScan[0])
+				for(i = 0; i < tempFiles.length; i++){
+					let newPath = foldersToScan[0] + '\\' + tempFiles[i]
+					if(fs.lstatSync(newPath).isDirectory()) {
+						// Add detected folders to the list of folders to scan
+						foldersToScan.push(newPath)
+						foundFolders.push(newPath)
+					}
+				}
+			}
+			foldersToScan.splice(0, 1)
+		}
+		return foundFolders
 	}
 
 // Misc event listeners
@@ -654,38 +910,31 @@ let imgDim = imgSettings[config.imageCount].dim
 		}
 		// Copy positive prompt from file metadata if possible
 		else if(command == 'copy-posprompt'){
-			copyFromPrompt(element, 'positive')
+			clipboard.writeText(getMetadata(element.src, 'positive'))
 		}
 		// Copy negative prompt from file metadata if possible
 		else if(command == 'copy-negprompt'){
-			copyFromPrompt(element, 'negative')
+			clipboard.writeText(getMetadata(element.src, 'negative'))
 		}
 		// Copy seed from file metadata if possible
 		else if(command == 'copy-seed'){
-			copyFromPrompt(element, 'seed')
+			clipboard.writeText(getMetadata(element.src, 'seed'))
 		}
 		// Copy negative prompt from file metadata if possible
 		else if(command == 'copy-checkpoint'){
-			copyFromPrompt(element, 'checkpoint')
+			clipboard.writeText(getMetadata(element.src, 'checkpoint'))
 		}
 
 	})
 
 	// Receive config changes from main when it is synchronized across windows
+	// OLD?
 	ipcRenderer.on('sync-config', (e, receivedConfig) => {
 		let changedConfig = false
 		if(config.sourcePaths != receivedConfig.sourcePaths || config.movePath != receivedConfig.movePath || config.toggleSubFolders != receivedConfig.toggleSubFolders) changedConfig = true
 		if(changedConfig){
 			config = receivedConfig
 		}
-	})
-
-	// Reload when the config window is closed
-	ipcRenderer.on('config-closed', (e) => {
-		// Don't do it immediately, otherwise config changes won't have time to be updated
-		let timer = setTimeout(() => {
-			reload()
-		}, 100)
 	})
 
 	// Mouse movement event listener for updating the cursor position
@@ -714,7 +963,6 @@ let imgDim = imgSettings[config.imageCount].dim
 			if(imgCount == 1){
 				element = document.querySelector('#img0')
 			}else if(e.code == 'Space'){
-				console.log("space")
 				for(i = 0; i < imgCount; i++){
 					let img = document.querySelector('#img' + i)
 					pauseImg(img)
@@ -802,10 +1050,24 @@ let imgDim = imgSettings[config.imageCount].dim
 	})
 	// Settings button - Opens config window
 	document.querySelector('#configButton').addEventListener('click', () => {
-		// Open new window
-		let posX = window.screenLeft - 300 + window.outerWidth / 2
-		saveConfig('')
-		ipcRenderer.send('open-window', 600, 850, posX, 'config.html', false, false, '')
+		// Switch visibility of content
+		if(!configDiv.classList.contains('hidden')){
+			// Switch to gallery, reloading if changes were made
+			if(!configChanged){
+				gallery.classList.add('flex')
+				gallery.classList.remove('hidden')
+				configDiv.classList.remove('flex')
+				configDiv.classList.add('hidden')
+			}else{
+				reload()
+			}
+		}else{
+			// Switch to config
+			gallery.classList.add('hidden')
+			gallery.classList.remove('flex')
+			configDiv.classList.remove('hidden')
+			configDiv.classList.add('flex')
+		}
 	})
 	// Move all low rated button - Moves lowly rated images to the configured target folder
 	document.querySelector('#moveButton').addEventListener('click', () => {
@@ -816,6 +1078,7 @@ let imgDim = imgSettings[config.imageCount].dim
 			}
 		}
 		lowRatedImages = []
+		reload()
 	})
 	// Copy all button - Copies all images in the active pool to the target folder (selected on click)
 	document.querySelector('#copyButton').addEventListener('click', () => {
@@ -832,8 +1095,8 @@ let imgDim = imgSettings[config.imageCount].dim
 	})
 	// Export prompts button - Export all positive prompts from the active image pool to a text file
 	document.querySelector('#copyPrompt').addEventListener('click', () => {
-		// Get random prompty from active pool
-		copyFromPrompt({src: getRandImg()}, 'positive')
+		// Get random prompt from active pool
+		clipboard.writeText(getMetadata(getRandImg(), 'positive'))
 	})
 	// Image pool selector - Controls which array new images are drawn from when being changed
 	document.querySelector('#imagePoolSelector').addEventListener('change', (e) => {
@@ -911,11 +1174,23 @@ let imgDim = imgSettings[config.imageCount].dim
 	document.querySelector('#removeFromPoolButton').addEventListener('click', (e) => {
 		removeAllFromPool()
 	})
-	// Custom pool input field - Detect focus and unfocus so keyup events can be ignored while typing in it
+	// Input fields - Detect focus and unfocus so keyup events can be ignored while typing in them
 	let customPoolInput = document.querySelector('#customPoolInput')
 	customPoolInput.addEventListener('focus', () => {
 		inputFieldFocus = true
 	})
 	customPoolInput.addEventListener('blur', () => {
+		inputFieldFocus = false
+	})
+	metadataFilter.addEventListener('focus', () => {
+		inputFieldFocus = true
+	})
+	metadataFilter.addEventListener('blur', () => {
+		inputFieldFocus = false
+	})
+	metadataFilterNeg.addEventListener('focus', () => {
+		inputFieldFocus = true
+	})
+	metadataFilterNeg.addEventListener('blur', () => {
 		inputFieldFocus = false
 	})

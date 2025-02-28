@@ -25,12 +25,19 @@ img {
 }
 
 #imgDisplay {
-	display: flex;
 	flex-wrap: wrap;
 	justify-content: space-around;
 	align-content: space-around;
 	height: auto;
 	width: 100%;
+}
+
+.hidden {
+	display: none;
+}
+
+.flex {
+	display: flex;
 }
 
 .overlay {
@@ -78,6 +85,8 @@ img {
 	text-align: center;
 	padding: 5px 0;
 	border-radius: 6px;
+	border-style: solid;
+	border-color: white;
 	font-size: 14px;
    
 	/* Position the tooltip text - see examples below! */
@@ -90,4 +99,68 @@ img {
   /* Show the tooltip text when you mouse over the tooltip container */
 .tooltip:hover .tooltiptext {
 	visibility: visible;
+}
+
+
+/*--------------------------FROM CONFIG----------------------------*/
+/*-----------------------------------------------------------------*/
+
+#config {
+    text-align: left;
+	margin-top: 12px;
+	flex-wrap: wrap;
+	justify-content: space-evenly;
+	align-content: space-around;
+	height: auto;
+	width: 95%;
+}
+
+input[type=checkbox] {
+    margin-left: 10px;
+    margin-right: 10px;
+}
+
+input[type=button] {
+    margin-top: 5px;
+}
+
+.deleteButton {
+    margin-left: 20px;
+}
+
+#addFoldersButton {
+    margin-right: 20px;
+}
+
+#moveTarget {
+    margin-left: 10px;
+}
+
+.grow-wrap {
+    display: grid;
+}
+.grow-wrap::after {
+    /* Note the weird space! Needed to prevent jumpy behavior */
+    content: attr(data-replicated-value) " ";
+  
+    /* This is how textarea text behaves */
+    white-space: pre-wrap;
+  
+    /* Hidden from view, clicks, and screen readers */
+    visibility: hidden;
+}
+.grow-wrap > textarea {
+    /* You could leave this, but after a user resizes, then it ruins the auto sizing */
+    resize: none;
+  
+    /* Firefox shows scrollbar on growth, you can hide like this. */
+    overflow: hidden;
+}
+.grow-wrap > textarea,
+.grow-wrap::after {
+    /* Identical styling required!! */
+    border: 1px solid black;
+  
+    /* Place on top of each other */
+    grid-area: 1 / 1 / 2 / 2;
 }
