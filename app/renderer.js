@@ -161,7 +161,9 @@ let imgDim = imgSettings[config.imageCount].dim
 
 	fixRatingPaths()
 	fixCustomPoolPaths()
-	document.querySelector('#imageCounter').innerHTML = getImagePool().length
+	let uiImageCount = getImagePool().length
+	if(uiImageCount == 1 && getImagePool()[0] == "../images/no-images.png") uiImageCount = 0
+	document.querySelector('#imageCounter').innerHTML = uiImageCount
 
 	//let buffer = fs.readFileSync('G:\\1.png')
 	//console.log(ExifReader.load(buffer))
@@ -178,7 +180,10 @@ let imgDim = imgSettings[config.imageCount].dim
 			img = config.latestGrid[i].src
 			alt = ' alt="' + config.latestGrid[i].alt + '"'
 		}
-		startingImages[i] = '<img id="img' + i + '" src="' + img + '" width="' + imgDim + '" height="' + imgDim + '" style="border-style: solid; border-width: 3px; border-color: white"' + alt + '></img>'
+		elementType = 'img'
+		//if(img.includes(".mp4")) elementType = 'video'
+		divTemp = '<div class="imgVideoDiv" width="' + imgDim + '" height="' + imgDim + '" style="border-style: solid; border-width: 3px; border-color: green;"> '
+		startingImages[i] = '<' + elementType + ' loop="" autoplay="" muted="" id="img' + i + '" src="' + img + '" width="' + imgDim + '" height="' + imgDim + '" style="border-style: solid; border-width: 3px; border-color: white"' + alt + '></' + elementType + '>'
 	}
 
 	// Insert starting images into HTML, within the imgDisplay element
@@ -471,12 +476,13 @@ let imgDim = imgSettings[config.imageCount].dim
 			let tempImages = fs.readdirSync(folderPath)
 			let metadataFilterList = config.metadataFilter.toLowerCase().split(",")
 			let metadataFilterListNeg = config.metadataFilterNegative.toLowerCase().split(",")
+			console.log(tempImages.length)
 			for(i = 0; i < tempImages.length; i++){
 				
 				// Only keep files with specific file extensions. Also filter out files not matching the set filter
 				let fileEnding = tempImages[i].substring(tempImages[i].length - 5, tempImages[i].length)
 				if(fileEnding.includes('.png') || fileEnding.includes('.jpg') || fileEnding.includes('.jpeg') || fileEnding.includes('.gif') || fileEnding.includes('.webp')){
-					if(fileEnding.includes('.png') && (config.fileNameFilter == "" || tempImages[i].includes(config.fileNameFilter))){
+					if(config.fileNameFilter == "" || tempImages[i].includes(config.fileNameFilter)){
 						if(config.metadataFilter == ""){
 							tempImages[i] = path.join(folderPath, tempImages[i])
 						}else{
@@ -1180,6 +1186,12 @@ let imgDim = imgSettings[config.imageCount].dim
 		inputFieldFocus = true
 	})
 	customPoolInput.addEventListener('blur', () => {
+		inputFieldFocus = false
+	})
+	fileNameFilter.addEventListener('focus', () => {
+		inputFieldFocus = true
+	})
+	fileNameFilter.addEventListener('blur', () => {
 		inputFieldFocus = false
 	})
 	metadataFilter.addEventListener('focus', () => {

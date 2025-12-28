@@ -47,10 +47,6 @@ function handleSquirrelEvent() {
 	const squirrelEvent = process.argv[1]
 	switch (squirrelEvent) {
 		case '--squirrel-firstrun':
-			// Open config window
-			app.whenReady().then(() => {
-				createWindow(600, 850, 0, 'config.html', false, false)
-			})
 			return false
 
 		case '--squirrel-install':
@@ -295,9 +291,10 @@ app.on('window-all-closed', () => {
 	})
 	// Copy image to configured folder
 	ipcMain.on('copy-file', (e, src, dest) => {
-		let pathParts = src.split('\\')
-		fileName = pathParts[pathParts.length - 1]
-		fs.copyFile(src, dest + "\\" + fileName, (err) => {if(err) throw err})
+		console.log(src)
+		let pathParts = src.split('/')
+		let fileName = pathParts[pathParts.length - 1]
+		fs.copyFile(src, dest + "/" + fileName, (err) => {if(err) throw err})
 	})
 	// Delete file
 	ipcMain.on('delete-file', (e, path) => {

@@ -139,6 +139,7 @@ Options not yet covered in the sections above are:
 - Maybe put some "config" values into other files
 - Better looking UI
 - A toggleable way to see an image's rating without right-clicking it
+- A toggleable way to visually show the timers
 - In-app help pages?
 - A button for hiding / displaying the main menu's buttons and stuff
 - Source folder save states
