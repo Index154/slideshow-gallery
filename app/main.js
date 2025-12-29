@@ -5,7 +5,7 @@ const fs = require('fs')
 const { decode } = require('html-entities')
 let mainWin
 let mainWinState = 'preparing'
-let devToolsOnStart = true
+let devToolsOnStart = false
 
 // Prevent the app from launching during a squirrel startup
 if (require('electron-squirrel-startup')) app.quit()
@@ -14,6 +14,7 @@ if (require('electron-squirrel-startup')) app.quit()
 // npm run make => Make setup exe
 if (handleSquirrelEvent()) {
 	// Do not launch the app
+	devToolsOnStart = false
 	return;
 }
 // Function for the above
@@ -285,20 +286,20 @@ app.on('window-all-closed', () => {
 	})
 	// Move image to configured folder
 	ipcMain.on('move-file', (e, path) => {
-		let pathParts = path.split('/')
+		let pathParts = path.split('\\')
 		fileName = pathParts[pathParts.length - 1]
 		fs.rename(path, movePath + "\\" + fileName, (err) => {if(err) throw err})
 	})
 	// Copy image to configured folder
 	ipcMain.on('copy-file', (e, src, dest) => {
 		console.log(src)
-		let pathParts = src.split('/')
+		let pathParts = src.split('\\')
 		let fileName = pathParts[pathParts.length - 1]
-		fs.copyFile(src, dest + "/" + fileName, (err) => {if(err) throw err})
+		fs.copyFile(src, dest + "\\" + fileName, (err) => {if(err) throw err})
 	})
 	// Delete file
 	ipcMain.on('delete-file', (e, path) => {
-		let pathParts = path.split('/')
+		let pathParts = path.split('\\')
 		fileName = pathParts[pathParts.length - 1]
 		fs.unlinkSync(path)
 	})

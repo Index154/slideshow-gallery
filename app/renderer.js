@@ -547,8 +547,8 @@ let imgDim = imgSettings[config.imageCount].dim
 				}
 			}
 		}
-		//fs.writeFileSync(ratingsPath, JSON.stringify(ratings, null, 4))
-		//fs.writeFileSync(metadataPath, JSON.stringify(metadata, null, 4))
+		fs.writeFileSync(ratingsPath, JSON.stringify(ratings, null, 4))
+		fs.writeFileSync(metadataPath, JSON.stringify(metadata, null, 4))
 	}
 
 	// Fix missing file paths in custom pools
