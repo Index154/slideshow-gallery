@@ -286,7 +286,7 @@ app.on('window-all-closed', () => {
 	})
 	// Move image to configured folder
 	ipcMain.on('move-file', (e, path) => {
-		let pathParts = path.split('\\')
+		let pathParts = path.split('/')
 		fileName = pathParts[pathParts.length - 1]
 		fs.rename(path, movePath + "\\" + fileName, (err) => {if(err) throw err})
 	})
